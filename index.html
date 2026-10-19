@@ -207,22 +207,28 @@
         </div>
       </div>
       <div class="rail-status-panel">
-        <div class="rail-status-heading">⚠️ 運行情報チェック</div>
-        <div class="rail-check-message" role="status">
-          <strong>Yahoo!路線情報で最新状況を確認</strong>
-          <p>下のリンクから運行情報ページを開けます。GitHub PagesからYahoo!の情報を直接自動取得する機能はまだ接続していないため、このダッシュボード内にリアルタイムの路線一覧は表示していません。</p>
+        <div class="rail-status-heading">⚠️ 遅延・運転見合わせなどの路線</div>
+        <div id="rail-status-list" class="rail-list" aria-live="polite">
+          <div class="rail-empty">鉄道情報を読み込み中…</div>
         </div>
-        <div class="rail-source-grid">
+        <div class="info-panel" style="margin-top:10px">
+          <div>
+            <strong>取得状況</strong>
+            <p id="rail-updated">データを確認しています…</p>
+          </div>
+          <button id="refresh-rail" type="button">↻ 運行情報を更新</button>
+        </div>
+        <div class="rail-source-grid" style="margin-top:10px">
           <a href="https://transit.yahoo.co.jp/diainfo/area/4" target="_blank" rel="noopener noreferrer">
             <strong>関東の運行情報 ↗</strong>
-            <span>JR・私鉄・地下鉄など。運行情報のある路線を確認</span>
+            <span>JR・私鉄・地下鉄などの詳細を確認</span>
           </a>
           <a href="https://transit.yahoo.co.jp/diainfo/express" target="_blank" rel="noopener noreferrer">
             <strong>新幹線の運行情報 ↗</strong>
-            <span>新幹線の遅延・運転見合わせなどを確認</span>
+            <span>新幹線・特急などの情報を確認</span>
           </a>
         </div>
-        <p class="rail-status-note">※情報の掲載・更新はYahoo!路線情報側の基準によります。ページを開いて最新の更新時刻と詳細を確認してください。自動取得に失敗した場合に「平常運転」と誤表示しないよう、現時点では自動判定を行っていません。</p>
+        <p class="rail-status-note">※データはGitHub Actionsで定期取得します。取得エラーや古いデータの場合は正常運転と断定せず、上の公式情報源で最新状況を確認してください。</p>
       </div>
     </section>
 

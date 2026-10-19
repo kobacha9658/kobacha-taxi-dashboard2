@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "message": "初回の自動取得待ちです。GitHub Actionsから Update railway service information を実行してください。",
+  "updated_at": null,
+  "source_url": "https://transit.yahoo.co.jp/diainfo/area/4",
+  "disruptions": []
+}

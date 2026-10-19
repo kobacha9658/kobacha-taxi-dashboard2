@@ -1,14 +1,39 @@
 <!-- Replace the current contents inside .rail-status-panel with this block. -->
-<div class="rail-status-heading">⚠️ 運行情報（JR東日本・関東）</div>
-<div id="rail-live-list" class="rail-list" role="status" aria-live="polite">
-  <div class="rail-empty">運行情報を読み込み中…</div>
-</div>
-<div class="rail-meta" id="rail-live-meta">更新時刻を確認中…</div>
-<div class="rail-source-grid">
-  <a href="https://traininfo.jreast.co.jp/train_info/kanto.aspx" target="_blank" rel="noopener noreferrer">
-    <strong>JR東日本・関東の公式情報 ↗</strong>
-    <span>詳細・最新状況はこちらで確認</span>
-  </a>
+<style>
+  .jr-panel{border:1px solid #d9e1e8;border-radius:12px;overflow:hidden;background:#fff;color:#1c2733}
+  .jr-panel-head{display:flex;align-items:center;gap:10px;padding:13px 14px;background:#f4f8f5;border-bottom:1px solid #d9e1e8}
+  .jr-mark{display:grid;place-items:center;flex:0 0 38px;height:38px;border-radius:8px;background:#087c45;color:#fff;font-weight:800;font-size:.78rem;letter-spacing:-.04em}
+  .jr-panel-title{font-size:1rem;font-weight:800;margin:0}
+  .jr-panel-subtitle{font-size:.75rem;color:#667482;margin:3px 0 0}
+  .jr-live-label{margin-left:auto;white-space:nowrap;border-radius:999px;padding:5px 8px;background:#e8f5ed;color:#087c45;font-size:.72rem;font-weight:800}
+  .jr-list{display:grid}
+  .jr-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:13px 14px;border-bottom:1px solid #e8edf1}
+  .jr-row:last-child{border-bottom:0}
+  .jr-route{font-weight:800;font-size:.92rem;line-height:1.4}
+  .jr-detail{font-size:.8rem;color:#596775;line-height:1.5;margin-top:4px;overflow-wrap:anywhere}
+  .jr-badge{align-self:start;white-space:nowrap;border-radius:6px;padding:5px 8px;font-size:.74rem;font-weight:800;background:#fff0ed;color:#bd2e1f;border:1px solid #f4c5be}
+  .jr-empty{padding:14px;font-size:.85rem;color:#53616e;line-height:1.6;background:#fbfcfd}
+  .jr-error{color:#9a3412;background:#fff7ed}
+  .jr-panel-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:10px 14px;background:#f7f9fa;border-top:1px solid #e4e9ee;font-size:.73rem;color:#697684}
+  .jr-panel-foot a{color:#087c45;font-weight:800;text-decoration:none}
+  @media(max-width:420px){.jr-panel-head{padding:11px}.jr-row{padding:11px;gap:6px}.jr-route{font-size:.86rem}.jr-badge{font-size:.68rem;padding:4px 6px}.jr-live-label{font-size:.66rem;padding:4px 6px}}
+</style>
+<div class="jr-panel" aria-label="鉄道運行情報">
+  <div class="jr-panel-head">
+    <div class="jr-mark" aria-hidden="true">運行<br>情報</div>
+    <div>
+      <p class="jr-panel-title">鉄道運行情報</p>
+      <p class="jr-panel-subtitle">JR東日本・関東エリア</p>
+    </div>
+    <span class="jr-live-label">自動更新</span>
+  </div>
+  <div id="rail-live-list" class="jr-list" role="status" aria-live="polite">
+    <div class="jr-empty">運行情報を読み込み中…</div>
+  </div>
+  <div class="jr-panel-foot">
+    <span id="rail-live-meta">更新時刻を確認中…</span>
+    <a href="https://traininfo.jreast.co.jp/train_info/kanto.aspx" target="_blank" rel="noopener noreferrer">公式情報を確認 ↗</a>
+  </div>
 </div>
 <script>
 (async function loadRailStatus() {
@@ -23,25 +48,37 @@
     list.replaceChildren();
     if (data.status === 'alerts' && Array.isArray(data.alerts) && data.alerts.length) {
       data.alerts.forEach(alert => {
-        const item = document.createElement('div');
-        item.className = 'rail-item';
-        const title = document.createElement('strong');
-        title.textContent = '⚠️ 運行情報';
-        const detail = document.createElement('p');
-        detail.textContent = alert.detail || '詳細は公式ページで確認してください。';
-        item.append(title, detail);
-        list.append(item);
+        const row = document.createElement('div');
+        row.className = 'jr-row';
+        const text = document.createElement('div');
+        const route = document.createElement('div');
+        route.className = 'jr-route';
+        const detail = String(alert.detail || '詳細は公式ページで確認してください。');
+        // Use the beginning of the extracted notice as a compact title; preserve full notice below.
+        route.textContent = detail.length > 34 ? detail.slice(0, 34) + '…' : detail;
+        const description = document.createElement('div');
+        description.className = 'jr-detail';
+        description.textContent = detail;
+        text.append(route, description);
+        const badge = document.createElement('span');
+        badge.className = 'jr-badge';
+        badge.textContent = /運転見合わせ|運転中止|運休|一部運休/.test(detail) ? '運転見合わせ等' : '遅延等';
+        row.append(text, badge);
+        list.append(row);
       });
     } else {
-      const item = document.createElement('div');
-      item.className = 'rail-empty';
-      item.textContent = data.message || '運行異常を抽出できませんでした。平常運転とは断定できません。';
-      list.append(item);
+      const empty = document.createElement('div');
+      empty.className = 'jr-empty';
+      empty.textContent = data.message || '異常情報を抽出できませんでした。平常運転とは断定できません。公式情報をご確認ください。';
+      list.append(empty);
     }
-    meta.textContent = 'データ取得：' + (data.checked_at || '時刻不明') + '（15分ごとに更新予定）';
+    meta.textContent = '取得時刻：' + (data.checked_at || '不明') + ' · 15分ごとに更新予定';
   } catch (error) {
-    list.innerHTML = '<div class="rail-error">運行情報を取得できません。平常運転とは判定していません。公式情報を確認してください。</div>';
-    meta.textContent = '取得エラー：' + error.message;
+    const failure = document.createElement('div');
+    failure.className = 'jr-empty jr-error';
+    failure.textContent = '運行情報を取得できません。平常運転とは判定していません。公式情報をご確認ください。';
+    list.replaceChildren(failure);
+    meta.textContent = '取得エラー';
   }
 })();
 </script>

@@ -1,0 +1,47 @@
+<!-- Replace the current contents inside .rail-status-panel with this block. -->
+<div class="rail-status-heading">⚠️ 運行情報（JR東日本・関東）</div>
+<div id="rail-live-list" class="rail-list" role="status" aria-live="polite">
+  <div class="rail-empty">運行情報を読み込み中…</div>
+</div>
+<div class="rail-meta" id="rail-live-meta">更新時刻を確認中…</div>
+<div class="rail-source-grid">
+  <a href="https://traininfo.jreast.co.jp/train_info/kanto.aspx" target="_blank" rel="noopener noreferrer">
+    <strong>JR東日本・関東の公式情報 ↗</strong>
+    <span>詳細・最新状況はこちらで確認</span>
+  </a>
+</div>
+<script>
+(async function loadRailStatus() {
+  const list = document.getElementById('rail-live-list');
+  const meta = document.getElementById('rail-live-meta');
+  if (!list || !meta) return;
+  const source = 'https://kobacha9658.github.io/kobacha-taxi-dashboard2/data/rail-status.json';
+  try {
+    const response = await fetch(source + '?ts=' + Date.now(), { cache: 'no-store' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    list.replaceChildren();
+    if (data.status === 'alerts' && Array.isArray(data.alerts) && data.alerts.length) {
+      data.alerts.forEach(alert => {
+        const item = document.createElement('div');
+        item.className = 'rail-item';
+        const title = document.createElement('strong');
+        title.textContent = '⚠️ 運行情報';
+        const detail = document.createElement('p');
+        detail.textContent = alert.detail || '詳細は公式ページで確認してください。';
+        item.append(title, detail);
+        list.append(item);
+      });
+    } else {
+      const item = document.createElement('div');
+      item.className = 'rail-empty';
+      item.textContent = data.message || '運行異常を抽出できませんでした。平常運転とは断定できません。';
+      list.append(item);
+    }
+    meta.textContent = 'データ取得：' + (data.checked_at || '時刻不明') + '（15分ごとに更新予定）';
+  } catch (error) {
+    list.innerHTML = '<div class="rail-error">運行情報を取得できません。平常運転とは判定していません。公式情報を確認してください。</div>';
+    meta.textContent = '取得エラー：' + error.message;
+  }
+})();
+</script>

@@ -239,13 +239,24 @@
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
-            <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
-            <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
+            <strong>🗺️ NAVITIME 高速道路渋滞マップ（表示テスト）</strong>
+            <p class="muted">希望していたNAVITIMEの関東高速道路マップを、この枠内で表示できるか試しています。埋め込み制限がある場合は、下の「NAVITIMEで直接開く」を使ってね。</p>
           </div>
-          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高マップを開く ↗</a>
+          <a class="link-button" href="https://trafficmap.navitime.co.jp/highway/kanto" target="_blank" rel="noopener noreferrer">NAVITIMEで直接開く ↗</a>
+        </div>
+        <iframe title="NAVITIME 関東高速道路渋滞マップ" src="https://trafficmap.navitime.co.jp/highway/kanto" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:560px;border:1px solid var(--line);border-radius:10px;margin-top:12px;background:#fff"></iframe>
+        <p class="map-caption">※NAVITIME側が外部サイトへの埋め込みを許可していない場合、この枠内は表示されません。その場合も上のリンクから公式マップを開けます。渋滞情報の表示はNAVITIMEの提供内容に従います。</p>
+      </div>
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
+            <strong>📍 東京周辺の道路位置確認用マップ</strong>
+            <p class="muted">NAVITIMEが埋め込み表示できない場合の補助地図です。リアルタイム渋滞の色分けではありません。</p>
+          </div>
+          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高公式マップ ↗</a>
         </div>
         <div id="highway-map" role="application" aria-label="東京周辺の道路地図"></div>
-        <p class="map-caption">地図：OpenStreetMap contributors。拡大・縮小・移動ができます。道路網とJCT周辺の位置確認用で、色分けされたリアルタイム渋滞情報ではありません。最新の渋滞・事故・通行止めは上の首都高公式マップ、外環道などは下のドラとらで確認してください。</p>
+        <p class="map-caption">地図：OpenStreetMap contributors。拡大・縮小・移動ができます。実際の渋滞・事故・通行止めはNAVITIMEや首都高公式マップ、外環道などはドラとらで確認してください。</p>
       </div>
       <div class="traffic-feature">
         <div class="traffic-feature-head">

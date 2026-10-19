@@ -85,6 +85,14 @@
     .info-panel p { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
     .disclaimer { margin: 14px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.6; }
     footer { padding: 0 16px 24px; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+
+    .rail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .rail-card { min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+    .rail-card h3 { margin: 0 0 7px; font-size: .96rem; }
+    .rail-card p { margin: 0 0 10px; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+    .rail-card a { color: var(--blue); font-size: .84rem; font-weight: 700; text-decoration: none; }
+    .rail-card a:hover { text-decoration: underline; }
+
     @media (max-width: 380px) {
       main { padding: 10px; }
       .section { padding: 10px; }
@@ -93,6 +101,22 @@
       .camera-foot { padding: 7px; font-size: .68rem; }
       .camera-foot button { font-size: .68rem; }
     }
+
+    .rail-check-message{padding:12px;background:#fff;border:1px solid #f0d1d1;border-radius:10px;margin:8px 0 12px;line-height:1.55}
+    .rail-check-message strong{color:#b42318}
+    .rail-check-message p{font-size:.84rem;color:#53657a;margin:5px 0 0}
+    .rail-source-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .rail-source-grid a{display:flex;flex-direction:column;gap:4px;padding:11px 12px;border:1px solid #e5eaf0;border-radius:10px;background:#fff;text-decoration:none;min-width:0}
+    .rail-source-grid a strong{color:#075acb;font-size:.9rem}
+    .rail-source-grid a span{color:#53657a;font-size:.77rem;line-height:1.35}
+    @media(max-width:460px){.rail-source-grid{grid-template-columns:1fr 1fr}.rail-source-grid a{padding:9px}}
+    .rail-status-panel{border:1px solid #ffcaca;background:linear-gradient(135deg,#fff7f7,#fff);border-radius:14px;padding:12px}
+    .rail-status-heading{font-weight:800;color:#c62828;background:#ffeded;border-radius:9px;padding:10px 12px;margin-bottom:6px}
+    .rail-status-row{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 8px;border-bottom:1px solid #f2dddd;font-size:.92rem}
+    .rail-status-row strong{color:#183451}.rail-status-row>span:nth-child(2){color:#53657a;font-size:.85rem}
+    .rail-status-row a{color:#075acb;font-weight:700;text-decoration:none;white-space:nowrap}
+    .rail-status-note{font-size:.78rem;color:#6b7280;margin:12px 4px 2px}
+    @media(max-width:600px){.rail-status-row{grid-template-columns:1fr auto;gap:4px 8px}.rail-status-row>span:nth-child(2){grid-column:1/-1;grid-row:2}.rail-status-row .rail-links{grid-column:2;grid-row:1}}
   </style>
 </head>
 <body>
@@ -165,10 +189,38 @@
         </article>
       </div>
     </section>
+
+    <section class="section" aria-labelledby="rail-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="rail-heading">🚆 鉄道トラブル</h2>
+          <p class="section-note">Yahoo!路線情報を情報元に、遅延・運転見合わせをまとめて確認</p>
+        </div>
+      </div>
+      <div class="rail-status-panel">
+        <div class="rail-status-heading">⚠️ 運行情報チェック</div>
+        <div class="rail-check-message" role="status">
+          <strong>Yahoo!路線情報で最新状況を確認</strong>
+          <p>下のリンクから運行情報ページを開けます。GitHub PagesからYahoo!の情報を直接自動取得する機能はまだ接続していないため、このダッシュボード内にリアルタイムの路線一覧は表示していません。</p>
+        </div>
+        <div class="rail-source-grid">
+          <a href="https://transit.yahoo.co.jp/diainfo/area/4" target="_blank" rel="noopener noreferrer">
+            <strong>関東の運行情報 ↗</strong>
+            <span>JR・私鉄・地下鉄など。運行情報のある路線を確認</span>
+          </a>
+          <a href="https://transit.yahoo.co.jp/diainfo/express" target="_blank" rel="noopener noreferrer">
+            <strong>新幹線の運行情報 ↗</strong>
+            <span>新幹線の遅延・運転見合わせなどを確認</span>
+          </a>
+        </div>
+        <p class="rail-status-note">※情報の掲載・更新はYahoo!路線情報側の基準によります。ページを開いて最新の更新時刻と詳細を確認してください。自動取得に失敗した場合に「平常運転」と誤表示しないよう、現時点では自動判定を行っていません。</p>
+      </div>
+    </section>
+
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
   </main>
 
-  <footer>こばちゃ専用ダッシュボード · 画像を直接取得できない場合は、公式案内ページも確認してください。</footer>
+  <footer>こばちゃ専用ダッシュボード · 鉄道情報：Yahoo!路線情報（関東・新幹線）</footer>
 
   <script>
     const cameras = {

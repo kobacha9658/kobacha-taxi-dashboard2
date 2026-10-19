@@ -93,6 +93,15 @@
     .rail-card a { color: var(--blue); font-size: .84rem; font-weight: 700; text-decoration: none; }
     .rail-card a:hover { text-decoration: underline; }
 
+
+    .rail-list { display: grid; gap: 8px; }
+    .rail-item { border: 1px solid #fecaca; background: #fff1f2; border-radius: 10px; padding: 10px 12px; }
+    .rail-item strong { color: #b91c1c; display: block; margin-bottom: 3px; }
+    .rail-item p { margin: 0; font-size: .84rem; line-height: 1.5; }
+    .rail-empty, .rail-error { border-radius: 10px; padding: 12px; background: #f8fafc; color: var(--muted); font-size: .88rem; line-height: 1.55; }
+    .rail-error { background: #fff7ed; color: #9a3412; }
+    .rail-meta { color: var(--muted); font-size: .76rem; margin-top: 10px; }
+
     @media (max-width: 380px) {
       main { padding: 10px; }
       .section { padding: 10px; }
@@ -291,6 +300,43 @@
     refreshAll();
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
     setInterval(refreshAll, 60000);
+  
+
+    // 鉄道情報はGitHub Actionsが定期取得したJSONを読み込みます。
+    async function refreshRailInfo() {
+      const list = document.getElementById("rail-status-list");
+      const updated = document.getElementById("rail-updated");
+      if (!list || !updated) return;
+      list.innerHTML = '<div class="rail-empty">運行情報を取得しています…</div>';
+      try {
+        const response = await fetch('./data/rail-status.json?ts=' + Date.now(), { cache: 'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        if (!data || data.ok !== true || !Array.isArray(data.disruptions)) throw new Error(data && data.message ? data.message : 'データ形式が不正です');
+        list.replaceChildren();
+        if (data.disruptions.length === 0) {
+          const empty = document.createElement('div'); empty.className = 'rail-empty';
+          empty.textContent = '現在、掲載対象の運行情報はありません（情報源で確認できた範囲）。'; list.appendChild(empty);
+        } else {
+          data.disruptions.forEach(item => {
+            const card = document.createElement('article'); card.className = 'rail-item';
+            const title = document.createElement('strong'); title.textContent = (item.operator ? item.operator + ' · ' : '') + (item.line || '路線名不明') + (item.status ? ' — ' + item.status : '');
+            const detail = document.createElement('p'); detail.textContent = item.detail || '詳細は情報源をご確認ください。';
+            card.append(title, detail); list.appendChild(card);
+          });
+        }
+        updated.textContent = '情報源：Yahoo!路線情報（関東） · データ取得：' + (data.updated_at || '時刻不明') + (data.stale ? ' · 更新遅延の可能性あり' : '');
+      } catch (error) {
+        list.replaceChildren(); const err = document.createElement('div'); err.className = 'rail-error';
+        err.textContent = '鉄道情報を取得できません。正常運転を意味するものではありません。少し時間をおいて再試行するか、下の公式情報源を直接確認してください。'; list.appendChild(err);
+        updated.textContent = '取得エラー：' + (error && error.message ? error.message : '不明なエラー');
+      }
+    }
+    const railRefreshButton = document.getElementById('refresh-rail');
+    if (railRefreshButton) railRefreshButton.addEventListener('click', refreshRailInfo);
+    refreshRailInfo();
+    setInterval(refreshRailInfo, 5 * 60 * 1000);
+
   </script>
 </body>
 </html>

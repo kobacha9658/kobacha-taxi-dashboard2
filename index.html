@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10243a">
   <title>こばちゃ専用｜タクシー情報ダッシュボード</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
     :root {
       color-scheme: light;
@@ -124,16 +125,24 @@
     .traffic-feature { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; overflow: hidden; }
     .traffic-feature-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
     .traffic-feature-head p { margin: 5px 0 0; }
-    .traffic-feature iframe { display:block; width:100%; height:480px; border:1px solid var(--line); border-radius:10px; margin-top:12px; background:#f8fafc; }
+    #highway-map { display:block; width:100%; height:500px; border:1px solid var(--line); border-radius:10px; margin-top:12px; background:#e9eef2; z-index:0; }
+    .map-caption { margin:8px 0 0; color:var(--muted); font-size:.8rem; line-height:1.5; }
     .embed-fallback, .traffic-note { color:var(--muted); font-size:.8rem; line-height:1.6; }
     .legend-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
     .legend-grid > div { display:grid; grid-template-columns:18px 1fr; gap:2px 8px; align-items:center; font-size:.85rem; }
     .legend-grid span { grid-column:2; color:var(--muted); font-size:.78rem; }
     .legend-dot { display:block; width:15px; height:15px; border-radius:50%; grid-row:span 2; }
     .legend-dot.green {background:#20a464}.legend-dot.yellow {background:#f2c230}.legend-dot.orange {background:#f28c28}.legend-dot.red {background:#d92d20}.legend-dot.gray {background:#8793a1}
-    @media(max-width:600px) { .traffic-feature iframe { height:360px; } }
+    @media(max-width:600px) { #highway-map { height:390px; } }
 
-  </style>
+  
+    .map-preview-card{display:flex;align-items:center;gap:14px;padding:18px;margin-top:14px;border:1px solid var(--border,#d5dce3);border-radius:14px;background:var(--panel,#f6f8fa)}
+    .map-preview-icon{font-size:38px;flex:0 0 auto}
+    .map-preview-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+    .map-preview-copy span{font-size:.92rem;line-height:1.5;color:var(--muted,#667085)}
+    @media(max-width:600px){.map-preview-card{align-items:flex-start;flex-wrap:wrap}.map-preview-card .link-button{width:100%;text-align:center}}
+
+</style>
 </head>
 <body>
   <header>
@@ -224,42 +233,41 @@
       <div class="section-head">
         <div>
           <h2 id="traffic-heading">🚧 高速道路・渋滞情報</h2>
-          <p class="section-note">首都高・東京外環道を中心に、公式交通情報を地図で確認</p>
+          <p class="section-note">高速道路の公式交通マップを開いて、渋滞・事故・通行止めを確認</p>
         </div>
       </div>
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
-            <strong>🗺️ 首都高・公式交通情報</strong>
-            <p class="muted">首都高の交通状況・規制情報を公式サイトで確認します。</p>
+            <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
+            <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
           </div>
-          <a class="link-button" href="https://www.shutoko.jp/traffic/" target="_blank" rel="noopener noreferrer">公式マップを開く ↗</a>
+          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高マップを開く ↗</a>
         </div>
-        <iframe title="首都高公式交通情報（表示できない場合は公式サイトを開いてください）" src="https://www.shutoko.jp/traffic/" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onerror="this.style.display='none';document.getElementById('shutoko-fallback').hidden=false"></iframe>
-        <p id="shutoko-fallback" class="embed-fallback" hidden>公式サイトがこの画面内で表示できません。上の「公式マップを開く」から確認してください。</p>
+        <div id="highway-map" role="application" aria-label="東京周辺の道路地図"></div>
+        <p class="map-caption">地図：OpenStreetMap contributors。拡大・縮小・移動ができます。道路網とJCT周辺の位置確認用で、色分けされたリアルタイム渋滞情報ではありません。最新の渋滞・事故・通行止めは上の首都高公式マップ、外環道などは下のドラとらで確認してください。</p>
       </div>
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
             <strong>🛣️ NEXCO東日本「ドラとら」</strong>
-            <p class="muted">東京外環道や関越道・東北道などの交通情報を確認します。</p>
+            <p class="muted">東京外環道・関越道・東北道など、首都高以外の高速道路交通情報はこちら。</p>
           </div>
           <a class="link-button" href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer">ドラとらを開く ↗</a>
         </div>
-        <iframe title="NEXCO東日本 ドラとら（表示できない場合は公式サイトを開いてください）" src="https://www.drivetraffic.jp/" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
       </div>
       <div class="legend-panel">
-        <strong>🚗 交通状況・所要時間の色の目安</strong>
-        <p class="muted">以下は凡例の目安です。ダッシュボードが道路の色を自動取得しているわけではありません。実際の表示は公式サイトを優先してください。</p>
+        <strong>🚗 交通状況の色の目安</strong>
+        <p class="muted">凡例は一般的な目安です。実際の色・事故・通行止めなどは、必ず公式マップの表示を確認してください。</p>
         <div class="legend-grid">
-          <div><i class="legend-dot green"></i><b>緑：順調</b><span>流れがスムーズ</span></div>
-          <div><i class="legend-dot yellow"></i><b>黄：やや混雑</b><span>速度低下に注意</span></div>
+          <div><i class="legend-dot green"></i><b>緑：順調・規制表示</b><span>実際の判定は公式地図を確認</span></div>
+          <div><i class="legend-dot yellow"></i><b>黄：混雑</b><span>速度低下に注意</span></div>
           <div><i class="legend-dot orange"></i><b>オレンジ：渋滞</b><span>所要時間が延びる可能性</span></div>
-          <div><i class="legend-dot red"></i><b>赤：激しい渋滞</b><span>大幅な遅れに注意</span></div>
-          <div><i class="legend-dot gray"></i><b>グレー：規制</b><span>通行止め・規制を確認</span></div>
+          <div><i class="legend-dot red"></i><b>赤：強い渋滞・規制表示</b><span>表示内容を公式地図で確認</span></div>
+          <div><i class="legend-dot gray"></i><b>グレー：通行止め・規制</b><span>迂回や通行可否を確認</span></div>
         </div>
       </div>
-      <p class="traffic-note">※公式サイト側の設定により、上の枠内に表示されない場合があります。その場合は各公式リンクから直接開いてください。埋め込みが表示されても、情報の更新・正確性はリンク先の公式サイトに準じます。</p>
+      <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図へのリンクから最新情報を確認してください。</p>
     </section>
 
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
@@ -337,5 +345,36 @@
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
     setInterval(refreshAll, 60000);
   </script>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    (() => {
+      const el = document.getElementById('highway-map');
+      if (!el || !window.L) return;
+      const map = L.map(el, { scrollWheelZoom: false }).setView([35.6762, 139.7900], 10);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+      }).addTo(map);
+      const places = [
+        ['江戸橋JCT',35.6846,139.7778], ['箱崎JCT',35.6804,139.7874],
+        ['両国JCT',35.6957,139.7938], ['竹橋JCT',35.6905,139.7576],
+        ['三宅坂JCT',35.6802,139.7407], ['谷町JCT',35.6607,139.7358],
+        ['大橋JCT',35.6504,139.6847], ['熊野町JCT',35.7465,139.6976],
+        ['板橋JCT',35.7522,139.7068], ['江北JCT',35.7775,139.7704],
+        ['小菅JCT',35.7618,139.8218], ['堀切JCT',35.7449,139.8218],
+        ['葛西JCT',35.6500,139.8615], ['辰巳JCT',35.6458,139.8156],
+        ['有明JCT',35.6320,139.7900], ['大井JCT',35.5938,139.7506],
+        ['美女木JCT（外環）',35.8260,139.6380], ['川口JCT（外環）',35.8530,139.7360],
+        ['三郷JCT（外環）',35.8310,139.8670], ['大泉JCT（外環）',35.7590,139.5880]
+      ];
+      places.filter(p => Number.isFinite(p[2])).forEach(([name, lat, lon]) => {
+        L.circleMarker([lat, lon], { radius: 4, color: '#153d68', weight: 1.5, fillColor: '#ffffff', fillOpacity: 1 })
+          .bindTooltip(name, { direction: 'top', offset: [0, -3] }).addTo(map);
+      });
+      setTimeout(() => map.invalidateSize(), 250);
+    })();
+  </script>
+
 </body>
 </html>

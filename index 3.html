@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10243a">
+  <title>こばちゃ専用｜タクシー情報ダッシュボード</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #10243a;
+      --blue: #1d4e89;
+      --bg: #f2f5f8;
+      --card: #ffffff;
+      --text: #17212b;
+      --muted: #637181;
+      --line: #dce3ea;
+      --accent: #f2b544;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN",
+        "Yu Gothic", Meiryo, sans-serif;
+    }
+    header {
+      padding: 24px 16px 20px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+    }
+    .header-inner, main, footer { width: min(1100px, 100%); margin: 0 auto; }
+    .eyebrow { margin: 0 0 6px; color: #d5e6fa; font-size: .82rem; letter-spacing: .08em; }
+    h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); line-height: 1.3; }
+    .subtitle { margin: 8px 0 0; color: #e6eef7; font-size: .92rem; }
+    main { padding: 16px; }
+    .toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+      justify-content: space-between; margin-bottom: 16px;
+    }
+    .status { color: var(--muted); font-size: .82rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    button, .link-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: 0; border-radius: 10px; padding: 10px 13px; font: inherit;
+      font-size: .9rem; font-weight: 700; text-decoration: none; cursor: pointer;
+    }
+    button { background: var(--navy); color: #fff; }
+    .link-button { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .section {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px; margin: 0 0 16px; box-shadow: 0 3px 12px rgba(16,36,58,.045);
+    }
+    .section-head {
+      display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between;
+      gap: 10px; margin-bottom: 14px;
+    }
+    h2 { margin: 0; font-size: 1.18rem; }
+    .section-note { margin: 5px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+    .camera-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .camera {
+      min-width: 0; overflow: hidden; border: 1px solid var(--line);
+      border-radius: 12px; background: #f8fafc;
+    }
+    .camera-title { margin: 0; padding: 10px 11px; font-size: .9rem; font-weight: 700; }
+    .image-wrap {
+      aspect-ratio: 4 / 3; display: grid; place-items: center; overflow: hidden;
+      background: #e8edf2; color: var(--muted);
+    }
+    .camera img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .image-error { padding: 12px; text-align: center; font-size: .82rem; line-height: 1.5; }
+    .camera-foot {
+      display: flex; justify-content: space-between; align-items: center; gap: 6px;
+      padding: 8px 10px; color: var(--muted); font-size: .74rem;
+    }
+    .camera-foot button { padding: 6px 8px; border-radius: 7px; font-size: .75rem; }
+    .info-panel {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 13px;
+      margin-top: 14px; background: #f8fafc;
+    }
+    .info-panel strong { display: block; margin-bottom: 4px; }
+    .info-panel p { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+    .disclaimer { margin: 14px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+    footer { padding: 0 16px 24px; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+
+    .rail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .rail-card { min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+    .rail-card h3 { margin: 0 0 7px; font-size: .96rem; }
+    .rail-card p { margin: 0 0 10px; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+    .rail-card a { color: var(--blue); font-size: .84rem; font-weight: 700; text-decoration: none; }
+    .rail-card a:hover { text-decoration: underline; }
+
+    @media (max-width: 380px) {
+      main { padding: 10px; }
+      .section { padding: 10px; }
+      .camera-grid { gap: 7px; }
+      .camera-title { padding: 8px 7px; font-size: .78rem; }
+      .camera-foot { padding: 7px; font-size: .68rem; }
+      .camera-foot button { font-size: .68rem; }
+    }
+
+    .rail-check-message{padding:12px;background:#fff;border:1px solid #f0d1d1;border-radius:10px;margin:8px 0 12px;line-height:1.55}
+    .rail-check-message strong{color:#b42318}
+    .rail-check-message p{font-size:.84rem;color:#53657a;margin:5px 0 0}
+    .rail-source-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .rail-source-grid a{display:flex;flex-direction:column;gap:4px;padding:11px 12px;border:1px solid #e5eaf0;border-radius:10px;background:#fff;text-decoration:none;min-width:0}
+    .rail-source-grid a strong{color:#075acb;font-size:.9rem}
+    .rail-source-grid a span{color:#53657a;font-size:.77rem;line-height:1.35}
+    @media(max-width:460px){.rail-source-grid{grid-template-columns:1fr 1fr}.rail-source-grid a{padding:9px}}
+    .rail-status-panel{border:1px solid #ffcaca;background:linear-gradient(135deg,#fff7f7,#fff);border-radius:14px;padding:12px}
+    .rail-status-heading{font-weight:800;color:#c62828;background:#ffeded;border-radius:9px;padding:10px 12px;margin-bottom:6px}
+    .rail-status-row{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 8px;border-bottom:1px solid #f2dddd;font-size:.92rem}
+    .rail-status-row strong{color:#183451}.rail-status-row>span:nth-child(2){color:#53657a;font-size:.85rem}
+    .rail-status-row a{color:#075acb;font-weight:700;text-decoration:none;white-space:nowrap}
+    .rail-status-note{font-size:.78rem;color:#6b7280;margin:12px 4px 2px}
+    @media(max-width:600px){.rail-status-row{grid-template-columns:1fr auto;gap:4px 8px}.rail-status-row>span:nth-child(2){grid-column:1/-1;grid-row:2}.rail-status-row .rail-links{grid-column:2;grid-row:1}}
+
+    .muted { color: var(--muted); font-size: .85rem; line-height: 1.6; }
+    .official-panel, .legend-panel { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #f8fafc; }
+    .official-panel p { margin: 0 0 10px; }
+    .traffic-feature { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; overflow: hidden; }
+    .traffic-feature-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .traffic-feature-head p { margin: 5px 0 0; }
+    .traffic-feature iframe { display:block; width:100%; height:480px; border:1px solid var(--line); border-radius:10px; margin-top:12px; background:#f8fafc; }
+    .embed-fallback, .traffic-note { color:var(--muted); font-size:.8rem; line-height:1.6; }
+    .legend-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
+    .legend-grid > div { display:grid; grid-template-columns:18px 1fr; gap:2px 8px; align-items:center; font-size:.85rem; }
+    .legend-grid span { grid-column:2; color:var(--muted); font-size:.78rem; }
+    .legend-dot { display:block; width:15px; height:15px; border-radius:50%; grid-row:span 2; }
+    .legend-dot.green {background:#20a464}.legend-dot.yellow {background:#f2c230}.legend-dot.orange {background:#f28c28}.legend-dot.red {background:#d92d20}.legend-dot.gray {background:#8793a1}
+    @media(max-width:600px) { .traffic-feature iframe { height:360px; } }
+
+  
+    .map-preview-card{display:flex;align-items:center;gap:14px;padding:18px;margin-top:14px;border:1px solid var(--border,#d5dce3);border-radius:14px;background:var(--panel,#f6f8fa)}
+    .map-preview-icon{font-size:38px;flex:0 0 auto}
+    .map-preview-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+    .map-preview-copy span{font-size:.92rem;line-height:1.5;color:var(--muted,#667085)}
+    @media(max-width:600px){.map-preview-card{align-items:flex-start;flex-wrap:wrap}.map-preview-card .link-button{width:100%;text-align:center}}
+
+</style>
+</head>
+<body>
+  <section class="gps-bar" aria-label="現在地" role="region">
+    <div class="gps-pin" aria-hidden="true">📍</div>
+    <div class="gps-copy">
+      <p class="gps-label">GPS現在地</p>
+      <p class="gps-address" id="gps-address">位置情報の許可が必要です</p>
+      <p class="gps-status" id="gps-status" aria-live="polite">許可すると移動に合わせて住所を更新します</p>
+    </div>
+    <button class="gps-button" id="gps-start" type="button">位置情報を許可</button>
+  </section>
+  <header>
+    <div class="header-inner">
+      <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
+      <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
+      <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <div>
+        <strong>カメラ一覧</strong>
+        <div class="status" id="last-updated" aria-live="polite">読み込み準備中…</div>
+      </div>
+      <div class="actions">
+        <button id="refresh-all" type="button">↻ 画像を更新</button>
+        <a class="link-button" href="https://www.tokyo-tc.or.jp/driver/stand/livecamera/" target="_blank" rel="noopener noreferrer">公式カメラ案内 ↗</a>
+      </div>
+    </div>
+
+    <section class="section" aria-labelledby="yaesu-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="yaesu-heading">🚕 八重洲タクシー乗り場</h2>
+          <p class="section-note">現地の様子を2画面で確認</p>
+        </div>
+      </div>
+      <div class="camera-grid">
+        <article class="camera">
+          <h3 class="camera-title">八重洲カメラ ①</h3>
+          <div class="image-wrap">
+            <img data-camera="yaesu1" alt="八重洲タクシー乗り場カメラ1" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="yaesu1">準備中</span><button type="button" data-refresh="yaesu1">更新</button></div>
+        </article>
+        <article class="camera">
+          <h3 class="camera-title">八重洲カメラ ②</h3>
+          <div class="image-wrap">
+            <img data-camera="yaesu2" alt="八重洲タクシー乗り場カメラ2" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="yaesu2">準備中</span><button type="button" data-refresh="yaesu2">更新</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="haneda-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="haneda-heading">✈️ 羽田空港・待機プール</h2>
+          <p class="section-note">待機プール全体と東側を並べて表示</p>
+        </div>
+      </div>
+      <div class="camera-grid">
+        <article class="camera">
+          <h3 class="camera-title">待機プール</h3>
+          <div class="image-wrap">
+            <img data-camera="haneda1" alt="羽田空港タクシー待機プール" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="haneda1">準備中</span><button type="button" data-refresh="haneda1">更新</button></div>
+        </article>
+        <article class="camera">
+          <h3 class="camera-title">待機プール東側</h3>
+          <div class="image-wrap">
+            <img data-camera="haneda2" alt="羽田空港タクシー待機プール東側" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="haneda2">準備中</span><button type="button" data-refresh="haneda2">更新</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="flight-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="flight-heading">✈️ 羽田空港 国内線の遅延・欠航</h2>
+          <p class="section-note">羽田空港公式の運航情報を確認</p>
+        </div>
+      </div>
+      <div class="official-panel">
+        <p><strong>🛫 国内線 遅延・欠航情報（羽田空港公式）</strong></p>
+        <p class="muted">公式ページを開いて最新状況を確認できます。埋め込み表示が制限されている場合もあるため、下のリンクを用意しています。表示・通信エラーを「遅延・欠航なし」と判断しないでください。</p>
+        <a class="link-button" href="https://www.tokyo-haneda.com/flight/dms_cancel_delay.html" target="_blank" rel="noopener noreferrer">羽田空港公式の国内線遅延・欠航情報 ↗</a>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="traffic-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="traffic-heading">🚧 高速道路・渋滞情報</h2>
+          <p class="section-note">高速道路の公式交通マップを開いて、渋滞・事故・通行止めを確認</p>
+        </div>
+      </div>
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
+            <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
+            <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
+          </div>
+          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高マップを開く ↗</a>
+        </div>
+        <div class="map-preview-card">
+          <div class="map-preview-icon" aria-hidden="true">🛣️</div>
+          <div class="map-preview-copy">
+            <strong>首都高の道路交通状況マップ</strong>
+            <span>実際の路線図・JCT・出入口・渋滞や規制の表示は公式マップで確認できます。</span>
+          </div>
+          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">地図を見る</a>
+        </div>
+        <p class="muted">※公式サイトはフレーム内表示を認めていないため、ダッシュボード内への直接埋め込みではなく、公式マップを別画面で開く方式にしています。</p>
+      </div>
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
+            <strong>🛣️ NEXCO東日本「ドラとら」</strong>
+            <p class="muted">東京外環道・関越道・東北道など、首都高以外の高速道路交通情報はこちら。</p>
+          </div>
+          <a class="link-button" href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer">ドラとらを開く ↗</a>
+        </div>
+      </div>
+      <div class="legend-panel">
+        <strong>🚗 交通状況の色の目安</strong>
+        <p class="muted">凡例は一般的な目安です。実際の色・事故・通行止めなどは、必ず公式マップの表示を確認してください。</p>
+        <div class="legend-grid">
+          <div><i class="legend-dot green"></i><b>緑：順調・規制表示</b><span>実際の判定は公式地図を確認</span></div>
+          <div><i class="legend-dot yellow"></i><b>黄：混雑</b><span>速度低下に注意</span></div>
+          <div><i class="legend-dot orange"></i><b>オレンジ：渋滞</b><span>所要時間が延びる可能性</span></div>
+          <div><i class="legend-dot red"></i><b>赤：強い渋滞・規制表示</b><span>表示内容を公式地図で確認</span></div>
+          <div><i class="legend-dot gray"></i><b>グレー：通行止め・規制</b><span>迂回や通行可否を確認</span></div>
+        </div>
+      </div>
+      <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図へのリンクから最新情報を確認してください。</p>
+    </section>
+
+    <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
+  </main>
+
+  <footer>こばちゃ専用ダッシュボード · 羽田空港国内線／高速道路交通情報</footer>
+
+  <script>
+
+    // GPS位置を監視し、一定距離の移動があった場合だけ住所を再取得します。
+    // 住所変換にはOpenStreetMap Nominatimを使用し、過度な連続リクエストを避けます。
+    let gpsWatchId = null;
+    let lastGeocodeAt = 0;
+    let lastGeocodeCoords = null;
+    let geocodeBusy = false;
+    const gpsAddress = document.getElementById('gps-address');
+    const gpsStatus = document.getElementById('gps-status');
+    const gpsStart = document.getElementById('gps-start');
+
+    function distanceMeters(a, b) {
+      const rad = n => n * Math.PI / 180;
+      const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+      const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;
+      return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+    }
+
+    async function updateAddress(lat, lon, accuracy) {
+      const now = Date.now();
+      const point = {lat, lon};
+      const moved = !lastGeocodeCoords || distanceMeters(lastGeocodeCoords, point) >= 250;
+      // 初回は即時、その後は2分以上経過かつ250m以上移動したときだけ住所APIを呼びます。
+      if (geocodeBusy || (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 120000))) return;
+      geocodeBusy = true;
+      lastGeocodeAt = now;
+      lastGeocodeCoords = point;
+      gpsStatus.textContent = `位置を取得しました（誤差 約${Math.round(accuracy)}m）。住所を確認中…`;
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=ja`;
+        const response = await fetch(url, {headers:{'Accept':'application/json'}});
+        if (!response.ok) throw new Error('住所検索に失敗');
+        const data = await response.json();
+        const a = data.address || {};
+        const prefecture = a.province || a.state || a.prefecture || '';
+        const city = a.city || a.town || a.village || a.municipality || '';
+        const ward = a.city_district || a.suburb || a.quarter || a.neighbourhood || '';
+        const street = [a.road, a.house_number].filter(Boolean).join('');
+        const parts = [prefecture, city, ward, street].filter((v,i,arr) => v && arr.indexOf(v) === i);
+        gpsAddress.textContent = parts.join('') || data.display_name || '住所を特定できません';
+        gpsStatus.textContent = `最終取得 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
+      } catch (e) {
+        gpsAddress.textContent = '住所を取得できませんでした';
+        gpsStatus.textContent = 'GPS位置は取得済みです。通信状況を確認してください。';
+        lastGeocodeCoords = null;
+      } finally { geocodeBusy = false; }
+    }
+
+    function startGps() {
+      if (!('geolocation' in navigator)) {
+        gpsAddress.textContent = 'この端末・ブラウザはGPSに対応していません';
+        gpsStatus.textContent = '対応ブラウザで開いてください';
+        return;
+      }
+      if (gpsWatchId !== null) return;
+      gpsAddress.textContent = '現在地を取得中…';
+      gpsStatus.textContent = 'ブラウザの位置情報許可を確認してください';
+      gpsStart.textContent = '位置情報を監視中';
+      gpsStart.disabled = true;
+      gpsWatchId = navigator.geolocation.watchPosition(
+        pos => updateAddress(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
+        err => {
+          const messages = {1:'位置情報が拒否されました。ブラウザ設定で許可してください。',2:'現在地を取得できません。GPSや通信状況を確認してください。',3:'位置情報の取得がタイムアウトしました。'};
+          gpsAddress.textContent = '現在地を取得できません';
+          gpsStatus.textContent = messages[err.code] || '位置情報を取得できません';
+          gpsStart.textContent = 'もう一度試す';
+          gpsStart.disabled = false;
+          gpsWatchId = null;
+        },
+        {enableHighAccuracy:true, maximumAge:15000, timeout:20000}
+      );
+    }
+    gpsStart.addEventListener('click', startGps);
+
+    const cameras = {
+      yaesu1: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg",
+      yaesu2: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/cam_a.jpg",
+      haneda1: "https://ttc.taxi-inf.jp/Real001.jpg",
+      haneda2: "https://ttc.taxi-inf.jp/Real002.jpg"
+    };
+
+    // 画像URLに時刻を付けて、ブラウザの古いキャッシュを避けます。
+    function refreshCamera(id) {
+      const img = document.querySelector(`[data-camera="${id}"]`);
+      const status = document.querySelector(`[data-status="${id}"]`);
+      if (!img || !cameras[id]) return;
+
+      status.textContent = "読み込み中…";
+      img.onload = () => {
+        status.textContent = "表示中";
+      };
+      img.onerror = () => {
+        status.textContent = "表示できません";
+        const wrap = img.parentElement;
+        wrap.innerHTML = '<div class="image-error">画像を読み込めませんでした。<br>通信状況を確認するか、公式カメラ案内を開いてください。</div>';
+      };
+
+      const separator = cameras[id].includes("?") ? "&" : "?";
+      img.src = cameras[id] + separator + "_refresh=" + Date.now();
+    }
+
+    function refreshAll() {
+      // エラー表示になっていた画像枠も復元できるよう、img要素を作り直します。
+      Object.keys(cameras).forEach((id) => {
+        const oldImg = document.querySelector(`[data-camera="${id}"]`);
+        const wrap = oldImg ? oldImg.parentElement : document.querySelector(`[data-status="${id}"]`)?.closest(".camera")?.querySelector(".image-wrap");
+        if (wrap && !wrap.querySelector("img")) {
+          const img = document.createElement("img");
+          img.dataset.camera = id;
+          img.alt = ({
+            yaesu1: "八重洲タクシー乗り場カメラ1",
+            yaesu2: "八重洲タクシー乗り場カメラ2",
+            haneda1: "羽田空港タクシー待機プール",
+            haneda2: "羽田空港タクシー待機プール東側"
+          })[id];
+          wrap.replaceChildren(img);
+        }
+        refreshCamera(id);
+      });
+      document.getElementById("last-updated").textContent =
+        "最終更新操作：" + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    document.getElementById("refresh-all").addEventListener("click", refreshAll);
+    document.querySelectorAll("[data-refresh]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const id = button.dataset.refresh;
+        const img = document.querySelector(`[data-camera="${id}"]`);
+        const wrap = img ? img.parentElement : document.querySelector(`[data-status="${id}"]`)?.closest(".camera")?.querySelector(".image-wrap");
+        if (wrap && !wrap.querySelector("img")) {
+          const restored = document.createElement("img");
+          restored.dataset.camera = id;
+          restored.alt = id.startsWith("yaesu") ? "八重洲タクシー乗り場カメラ" : "羽田空港タクシー待機プール";
+          wrap.replaceChildren(restored);
+        }
+        refreshCamera(id);
+      });
+    });
+
+    refreshAll();
+    // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
+    setInterval(refreshAll, 60000);
+  </script>
+</body>
+</html>

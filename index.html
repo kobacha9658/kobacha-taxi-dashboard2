@@ -119,6 +119,22 @@
     .rail-source-grid a strong{color:#075acb;font-size:.9rem}
     .rail-source-grid a span{color:#53657a;font-size:.77rem;line-height:1.35}
     @media(max-width:460px){.rail-source-grid{grid-template-columns:1fr 1fr}.rail-source-grid a{padding:9px}}
+
+    .road-panel{border:1px solid var(--line);background:#f8fafc;border-radius:14px;padding:14px}
+    .road-heading{font-weight:800;color:#183451;background:#eaf2fb;border-radius:9px;padding:10px 12px;margin-bottom:10px}
+    .road-intro{font-size:.86rem;color:var(--muted);line-height:1.6;margin:0 2px 12px}
+    .road-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .road-legend-item{display:flex;align-items:flex-start;gap:9px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px;min-width:0}
+    .road-swatch{width:20px;height:20px;border-radius:5px;flex:0 0 20px;margin-top:2px}
+    .road-legend-item strong{display:block;font-size:.88rem;margin-bottom:3px}
+    .road-legend-item span{display:block;color:var(--muted);font-size:.76rem;line-height:1.45}
+    .road-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:13px}
+    .road-links a{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;text-decoration:none;min-width:0}
+    .road-links a strong{color:var(--blue);font-size:.9rem}
+    .road-links a span{color:var(--muted);font-size:.77rem;line-height:1.45}
+    .road-note{font-size:.76rem;color:var(--muted);line-height:1.55;margin:12px 3px 0}
+    @media(max-width:460px){.road-legend{grid-template-columns:1fr}.road-links{grid-template-columns:1fr}}
+
     .flight-status-panel{border:1px solid var(--line);background:#f8fafc;border-radius:14px;padding:12px}
     .flight-status-heading{font-weight:800;color:#183451;background:#eaf2fb;border-radius:9px;padding:10px 12px;margin-bottom:10px}
     .flight-status-frame{display:block;width:100%;height:390px;border:1px solid var(--line);border-radius:10px;background:#fff}
@@ -215,10 +231,41 @@
       </div>
     </section>
 
+
+    <section class="section" aria-labelledby="road-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="road-heading">🚧 高速道路・渋滞情報</h2>
+          <p class="section-note">首都高を中心に、渋滞・事故・通行止めを公式情報で確認</p>
+        </div>
+      </div>
+      <div class="road-panel">
+        <div class="road-heading">🚗 交通状況・所要時間の色の目安</div>
+        <p class="road-intro">下の色は道路状況を見るときの一般的な目安です。実際の道路の色分け・判定は、リンク先の公式交通情報の表示を優先してください。</p>
+        <div class="road-legend" aria-label="交通状況の色の目安">
+          <div class="road-legend-item"><span class="road-swatch" style="background:#22a06b"></span><div><strong>緑：順調</strong><span>目立った渋滞が少なく、流れがスムーズ</span></div></div>
+          <div class="road-legend-item"><span class="road-swatch" style="background:#f2c94c"></span><div><strong>黄：やや混雑</strong><span>速度低下や軽い渋滞に注意</span></div></div>
+          <div class="road-legend-item"><span class="road-swatch" style="background:#f2994a"></span><div><strong>オレンジ：渋滞</strong><span>所要時間が延びる可能性あり</span></div></div>
+          <div class="road-legend-item"><span class="road-swatch" style="background:#d64545"></span><div><strong>赤：激しい渋滞</strong><span>大幅な遅れを見込んでルートを確認</span></div></div>
+          <div class="road-legend-item"><span class="road-swatch" style="background:#555b66"></span><div><strong>グレー：通行止め・規制</strong><span>通行規制の有無や迂回路を要確認</span></div></div>
+        </div>
+        <div class="road-map-wrap" style="margin:14px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff">
+          <div style="padding:11px 12px;font-weight:800;background:#eaf2fb;color:#183451">🗺️ 首都高〜東京外環道エリアマップ</div>
+          <iframe title="首都高から東京外環道付近の地図" loading="lazy" style="display:block;width:100%;height:340px;border:0" src="https://www.openstreetmap.org/export/embed.html?bbox=139.45%2C35.55%2C139.95%2C35.85&layer=mapnik&marker=35.72%2C139.65"></iframe>
+          <div style="padding:9px 12px;color:var(--muted);font-size:.78rem;line-height:1.5">地図は位置確認用です。リアルタイムの渋滞色・通行規制は下の公式交通情報で確認してください。<br><a href="https://www.openstreetmap.org/?mlat=35.72&mlon=139.65#map=10/35.72/139.65" target="_blank" rel="noopener noreferrer">地図を大きく開く ↗</a></div>
+        </div>
+        <div class="road-links">
+          <a href="https://www.shutoko.jp/traffic/" target="_blank" rel="noopener noreferrer"><strong>首都高の交通情報 ↗</strong><span>都心環状線・羽田線・湾岸線などの渋滞、事故、通行止めを確認</span></a>
+          <a href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer"><strong>NEXCO東日本「ドラとら」↗</strong><span>関越道・東北道などの高速道路交通情報を確認</span></a>
+        </div>
+        <p class="road-note">※このパネルは交通状況の凡例と公式サイトへのリンクです。渋滞状況を自動取得しているわけではありません。所要時間や最新の規制は、リンク先で確認してください。</p>
+      </div>
+    </section>
+
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
   </main>
 
-  <footer>こばちゃ専用ダッシュボード · 羽田空港 国内線 遅延・欠航情報</footer>
+  <footer>こばちゃ専用ダッシュボード · 羽田空港 国内線／高速道路交通情報</footer>
 
   <script>
     const cameras = {

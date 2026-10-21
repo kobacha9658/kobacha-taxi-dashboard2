@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10243a">
   <title>こばちゃ専用｜タクシー情報ダッシュボード</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
     :root {
       color-scheme: light;
@@ -125,15 +124,14 @@
     .traffic-feature { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; overflow: hidden; }
     .traffic-feature-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
     .traffic-feature-head p { margin: 5px 0 0; }
-    #highway-map { display:block; width:100%; height:500px; border:1px solid var(--line); border-radius:10px; margin-top:12px; background:#e9eef2; z-index:0; }
-    .map-caption { margin:8px 0 0; color:var(--muted); font-size:.8rem; line-height:1.5; }
+    .traffic-feature iframe { display:block; width:100%; height:480px; border:1px solid var(--line); border-radius:10px; margin-top:12px; background:#f8fafc; }
     .embed-fallback, .traffic-note { color:var(--muted); font-size:.8rem; line-height:1.6; }
     .legend-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
     .legend-grid > div { display:grid; grid-template-columns:18px 1fr; gap:2px 8px; align-items:center; font-size:.85rem; }
     .legend-grid span { grid-column:2; color:var(--muted); font-size:.78rem; }
     .legend-dot { display:block; width:15px; height:15px; border-radius:50%; grid-row:span 2; }
     .legend-dot.green {background:#20a464}.legend-dot.yellow {background:#f2c230}.legend-dot.orange {background:#f28c28}.legend-dot.red {background:#d92d20}.legend-dot.gray {background:#8793a1}
-    @media(max-width:600px) { #highway-map { height:390px; } }
+    @media(max-width:600px) { .traffic-feature iframe { height:360px; } }
 
   
     .map-preview-card{display:flex;align-items:center;gap:14px;padding:18px;margin-top:14px;border:1px solid var(--border,#d5dce3);border-radius:14px;background:var(--panel,#f6f8fa)}
@@ -145,6 +143,15 @@
 </style>
 </head>
 <body>
+  <section class="gps-bar" aria-label="現在地" role="region">
+    <div class="gps-pin" aria-hidden="true">📍</div>
+    <div class="gps-copy">
+      <p class="gps-label">GPS現在地</p>
+      <p class="gps-address" id="gps-address">位置情報の許可が必要です</p>
+      <p class="gps-status" id="gps-status" aria-live="polite">許可すると移動に合わせて住所を更新します</p>
+    </div>
+    <button class="gps-button" id="gps-start" type="button">位置情報を許可</button>
+  </section>
   <header>
     <div class="header-inner">
       <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
@@ -239,24 +246,20 @@
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
-            <strong>🗺️ NAVITIME 高速道路渋滞マップ（表示テスト）</strong>
-            <p class="muted">希望していたNAVITIMEの関東高速道路マップを、この枠内で表示できるか試しています。埋め込み制限がある場合は、下の「NAVITIMEで直接開く」を使ってね。</p>
+            <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
+            <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
           </div>
-          <a class="link-button" href="https://trafficmap.navitime.co.jp/highway/kanto" target="_blank" rel="noopener noreferrer">NAVITIMEで直接開く ↗</a>
+          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高マップを開く ↗</a>
         </div>
-        <iframe title="NAVITIME 関東高速道路渋滞マップ" src="https://trafficmap.navitime.co.jp/highway/kanto" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:560px;border:1px solid var(--line);border-radius:10px;margin-top:12px;background:#fff"></iframe>
-        <p class="map-caption">※NAVITIME側が外部サイトへの埋め込みを許可していない場合、この枠内は表示されません。その場合も上のリンクから公式マップを開けます。渋滞情報の表示はNAVITIMEの提供内容に従います。</p>
-      </div>
-      <div class="traffic-feature">
-        <div class="traffic-feature-head">
-          <div>
-            <strong>📍 東京周辺の道路位置確認用マップ</strong>
-            <p class="muted">NAVITIMEが埋め込み表示できない場合の補助地図です。リアルタイム渋滞の色分けではありません。</p>
+        <div class="map-preview-card">
+          <div class="map-preview-icon" aria-hidden="true">🛣️</div>
+          <div class="map-preview-copy">
+            <strong>首都高の道路交通状況マップ</strong>
+            <span>実際の路線図・JCT・出入口・渋滞や規制の表示は公式マップで確認できます。</span>
           </div>
-          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高公式マップ ↗</a>
+          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">地図を見る</a>
         </div>
-        <div id="highway-map" role="application" aria-label="東京周辺の道路地図"></div>
-        <p class="map-caption">地図：OpenStreetMap contributors。拡大・縮小・移動ができます。実際の渋滞・事故・通行止めはNAVITIMEや首都高公式マップ、外環道などはドラとらで確認してください。</p>
+        <p class="muted">※公式サイトはフレーム内表示を認めていないため、ダッシュボード内への直接埋め込みではなく、公式マップを別画面で開く方式にしています。</p>
       </div>
       <div class="traffic-feature">
         <div class="traffic-feature-head">
@@ -287,6 +290,80 @@
   <footer>こばちゃ専用ダッシュボード · 羽田空港国内線／高速道路交通情報</footer>
 
   <script>
+
+    // GPS位置を監視し、一定距離の移動があった場合だけ住所を再取得します。
+    // 住所変換にはOpenStreetMap Nominatimを使用し、過度な連続リクエストを避けます。
+    let gpsWatchId = null;
+    let lastGeocodeAt = 0;
+    let lastGeocodeCoords = null;
+    let geocodeBusy = false;
+    const gpsAddress = document.getElementById('gps-address');
+    const gpsStatus = document.getElementById('gps-status');
+    const gpsStart = document.getElementById('gps-start');
+
+    function distanceMeters(a, b) {
+      const rad = n => n * Math.PI / 180;
+      const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+      const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;
+      return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+    }
+
+    async function updateAddress(lat, lon, accuracy) {
+      const now = Date.now();
+      const point = {lat, lon};
+      const moved = !lastGeocodeCoords || distanceMeters(lastGeocodeCoords, point) >= 250;
+      // 初回は即時、その後は2分以上経過かつ250m以上移動したときだけ住所APIを呼びます。
+      if (geocodeBusy || (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 120000))) return;
+      geocodeBusy = true;
+      lastGeocodeAt = now;
+      lastGeocodeCoords = point;
+      gpsStatus.textContent = `位置を取得しました（誤差 約${Math.round(accuracy)}m）。住所を確認中…`;
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=ja`;
+        const response = await fetch(url, {headers:{'Accept':'application/json'}});
+        if (!response.ok) throw new Error('住所検索に失敗');
+        const data = await response.json();
+        const a = data.address || {};
+        const prefecture = a.province || a.state || a.prefecture || '';
+        const city = a.city || a.town || a.village || a.municipality || '';
+        const ward = a.city_district || a.suburb || a.quarter || a.neighbourhood || '';
+        const street = [a.road, a.house_number].filter(Boolean).join('');
+        const parts = [prefecture, city, ward, street].filter((v,i,arr) => v && arr.indexOf(v) === i);
+        gpsAddress.textContent = parts.join('') || data.display_name || '住所を特定できません';
+        gpsStatus.textContent = `最終取得 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
+      } catch (e) {
+        gpsAddress.textContent = '住所を取得できませんでした';
+        gpsStatus.textContent = 'GPS位置は取得済みです。通信状況を確認してください。';
+        lastGeocodeCoords = null;
+      } finally { geocodeBusy = false; }
+    }
+
+    function startGps() {
+      if (!('geolocation' in navigator)) {
+        gpsAddress.textContent = 'この端末・ブラウザはGPSに対応していません';
+        gpsStatus.textContent = '対応ブラウザで開いてください';
+        return;
+      }
+      if (gpsWatchId !== null) return;
+      gpsAddress.textContent = '現在地を取得中…';
+      gpsStatus.textContent = 'ブラウザの位置情報許可を確認してください';
+      gpsStart.textContent = '位置情報を監視中';
+      gpsStart.disabled = true;
+      gpsWatchId = navigator.geolocation.watchPosition(
+        pos => updateAddress(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
+        err => {
+          const messages = {1:'位置情報が拒否されました。ブラウザ設定で許可してください。',2:'現在地を取得できません。GPSや通信状況を確認してください。',3:'位置情報の取得がタイムアウトしました。'};
+          gpsAddress.textContent = '現在地を取得できません';
+          gpsStatus.textContent = messages[err.code] || '位置情報を取得できません';
+          gpsStart.textContent = 'もう一度試す';
+          gpsStart.disabled = false;
+          gpsWatchId = null;
+        },
+        {enableHighAccuracy:true, maximumAge:15000, timeout:20000}
+      );
+    }
+    gpsStart.addEventListener('click', startGps);
+
     const cameras = {
       yaesu1: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg",
       yaesu2: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/cam_a.jpg",
@@ -356,36 +433,5 @@
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
     setInterval(refreshAll, 60000);
   </script>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script>
-    (() => {
-      const el = document.getElementById('highway-map');
-      if (!el || !window.L) return;
-      const map = L.map(el, { scrollWheelZoom: false }).setView([35.6762, 139.7900], 10);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
-      }).addTo(map);
-      const places = [
-        ['江戸橋JCT',35.6846,139.7778], ['箱崎JCT',35.6804,139.7874],
-        ['両国JCT',35.6957,139.7938], ['竹橋JCT',35.6905,139.7576],
-        ['三宅坂JCT',35.6802,139.7407], ['谷町JCT',35.6607,139.7358],
-        ['大橋JCT',35.6504,139.6847], ['熊野町JCT',35.7465,139.6976],
-        ['板橋JCT',35.7522,139.7068], ['江北JCT',35.7775,139.7704],
-        ['小菅JCT',35.7618,139.8218], ['堀切JCT',35.7449,139.8218],
-        ['葛西JCT',35.6500,139.8615], ['辰巳JCT',35.6458,139.8156],
-        ['有明JCT',35.6320,139.7900], ['大井JCT',35.5938,139.7506],
-        ['美女木JCT（外環）',35.8260,139.6380], ['川口JCT（外環）',35.8530,139.7360],
-        ['三郷JCT（外環）',35.8310,139.8670], ['大泉JCT（外環）',35.7590,139.5880]
-      ];
-      places.filter(p => Number.isFinite(p[2])).forEach(([name, lat, lon]) => {
-        L.circleMarker([lat, lon], { radius: 4, color: '#153d68', weight: 1.5, fillColor: '#ffffff', fillOpacity: 1 })
-          .bindTooltip(name, { direction: 'top', offset: [0, -3] }).addTo(map);
-      });
-      setTimeout(() => map.invalidateSize(), 250);
-    })();
-  </script>
-
 </body>
 </html>

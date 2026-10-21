@@ -126,9 +126,6 @@
     .rail-status-row a{color:#075acb;font-weight:700;text-decoration:none;white-space:nowrap}
     .rail-status-note{font-size:.78rem;color:#6b7280;margin:12px 4px 2px}
     @media(max-width:600px){.rail-status-row{grid-template-columns:1fr auto;gap:4px 8px}.rail-status-row>span:nth-child(2){grid-column:1/-1;grid-row:2}.rail-status-row .rail-links{grid-column:2;grid-row:1}}
-  
-    .rail-list{display:grid;gap:8px;margin:10px 0}.rail-item,.rail-empty,.rail-error{padding:10px 12px;border-radius:9px;background:#fff;border:1px solid #eadada}.rail-item strong{display:block;color:#8f1d1d}.rail-item p{margin:5px 0 0;font-size:.88rem;color:#4b5563}.rail-empty{color:#53657a}.rail-error{color:#991b1b;background:#fff1f2}.rail-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.rail-actions a,.rail-actions button{font:inherit;font-size:.85rem;padding:8px 10px;border-radius:8px;border:1px solid #d8baba;background:#fff;color:#075acb;text-decoration:none;cursor:pointer}
-
   </style>
 </head>
 <body>
@@ -202,28 +199,27 @@
       </div>
     </section>
 
-    <section class="section" aria-labelledby="rail-heading">
+    <section class="section" aria-labelledby="flight-heading">
       <div class="section-head">
         <div>
-          <h2 id="rail-heading">🚆 鉄道トラブル</h2>
-          <p class="section-note">Yahoo!路線情報を情報元に、遅延・運転見合わせをまとめて確認</p>
+          <h2 id="flight-heading">✈️ 羽田空港 国内線の遅延・欠航</h2>
+          <p class="section-note">国内線の運航トラブルを公式情報で確認</p>
         </div>
       </div>
       <div class="rail-status-panel">
-        <div class="rail-status-heading">⚠️ 遅延・運転見合わせ</div>
-        <div id="rail-status-list" class="rail-list" role="status"><div class="rail-empty">運行情報を取得しています…</div></div>
-        <div class="rail-actions"><button type="button" id="refresh-rail">鉄道情報を更新</button>
-          <a href="https://transit.yahoo.co.jp/diainfo/area/4" target="_blank" rel="noopener noreferrer">関東の運行情報 ↗</a>
-          <a href="https://transit.yahoo.co.jp/diainfo/express" target="_blank" rel="noopener noreferrer">新幹線・特急 ↗</a>
-        </div>
-        <p id="rail-updated" class="rail-status-note">取得状況を確認しています…</p>
+        <div class="rail-status-heading">🛫 国内線 遅延・欠航情報</div>
+        <p style="margin:10px 2px;line-height:1.65;color:#53657a;font-size:.9rem">
+          羽田空港公式サイトの国内線「遅延・欠航状況」を開いて、遅延・欠航が発生している便を確認できます。
+        </p>
+        <a class="link-button" href="https://www.tokyo-haneda.com/flight/dms_cancel_delay.html" target="_blank" rel="noopener noreferrer">国内線の遅延・欠航を確認 ↗</a>
+        <p class="rail-status-note">※公式サイトで最新状況を確認してください。現在、このダッシュボード内で便情報を自動取得・一覧表示する機能はありません。取得用JSONを読み込まないため、鉄道情報のHTTP 404は発生しません。</p>
       </div>
     </section>
 
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
   </main>
 
-  <footer>こばちゃ専用ダッシュボード · 鉄道情報：Yahoo!路線情報（関東・新幹線）</footer>
+  <footer>こばちゃ専用ダッシュボード · 羽田空港 国内線 遅延・欠航情報</footer>
 
   <script>
     const cameras = {
@@ -297,40 +293,6 @@
   
 
     // 鉄道情報はGitHub Actionsが定期取得したJSONを読み込みます。
-    async function refreshRailInfo() {
-      const list = document.getElementById("rail-status-list");
-      const updated = document.getElementById("rail-updated");
-      if (!list || !updated) return;
-      list.innerHTML = '<div class="rail-empty">運行情報を取得しています…</div>';
-      try {
-        const response = await fetch('./data/rail-status.json?ts=' + Date.now(), { cache: 'no-store' });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const data = await response.json();
-        if (!data || data.ok !== true || !Array.isArray(data.disruptions)) throw new Error(data && data.message ? data.message : 'データ形式が不正です');
-        list.replaceChildren();
-        if (data.disruptions.length === 0) {
-          const empty = document.createElement('div'); empty.className = 'rail-empty';
-          empty.textContent = '現在、掲載対象の運行情報はありません（情報源で確認できた範囲）。'; list.appendChild(empty);
-        } else {
-          data.disruptions.forEach(item => {
-            const card = document.createElement('article'); card.className = 'rail-item';
-            const title = document.createElement('strong'); title.textContent = (item.operator ? item.operator + ' · ' : '') + (item.line || '路線名不明') + (item.status ? ' — ' + item.status : '');
-            const detail = document.createElement('p'); detail.textContent = item.detail || '詳細は情報源をご確認ください。';
-            card.append(title, detail); list.appendChild(card);
-          });
-        }
-        updated.textContent = '情報源：Yahoo!路線情報（関東） · データ取得：' + (data.updated_at || '時刻不明') + (data.stale ? ' · 更新遅延の可能性あり' : '');
-      } catch (error) {
-        list.replaceChildren(); const err = document.createElement('div'); err.className = 'rail-error';
-        err.textContent = '鉄道情報を取得できません。正常運転を意味するものではありません。少し時間をおいて再試行するか、下の公式情報源を直接確認してください。'; list.appendChild(err);
-        updated.textContent = '取得エラー：' + (error && error.message ? error.message : '不明なエラー');
-      }
-    }
-    const railRefreshButton = document.getElementById('refresh-rail');
-    if (railRefreshButton) railRefreshButton.addEventListener('click', refreshRailInfo);
-    refreshRailInfo();
-    setInterval(refreshRailInfo, 5 * 60 * 1000);
-
   </script>
 </body>
 </html>

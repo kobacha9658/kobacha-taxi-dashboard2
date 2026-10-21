@@ -126,6 +126,9 @@
     .rail-status-row a{color:#075acb;font-weight:700;text-decoration:none;white-space:nowrap}
     .rail-status-note{font-size:.78rem;color:#6b7280;margin:12px 4px 2px}
     @media(max-width:600px){.rail-status-row{grid-template-columns:1fr auto;gap:4px 8px}.rail-status-row>span:nth-child(2){grid-column:1/-1;grid-row:2}.rail-status-row .rail-links{grid-column:2;grid-row:1}}
+  
+    .rail-list{display:grid;gap:8px;margin:10px 0}.rail-item,.rail-empty,.rail-error{padding:10px 12px;border-radius:9px;background:#fff;border:1px solid #eadada}.rail-item strong{display:block;color:#8f1d1d}.rail-item p{margin:5px 0 0;font-size:.88rem;color:#4b5563}.rail-empty{color:#53657a}.rail-error{color:#991b1b;background:#fff1f2}.rail-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.rail-actions a,.rail-actions button{font:inherit;font-size:.85rem;padding:8px 10px;border-radius:8px;border:1px solid #d8baba;background:#fff;color:#075acb;text-decoration:none;cursor:pointer}
+
   </style>
 </head>
 <body>
@@ -207,28 +210,13 @@
         </div>
       </div>
       <div class="rail-status-panel">
-        <div class="rail-status-heading">⚠️ 遅延・運転見合わせなどの路線</div>
-        <div id="rail-status-list" class="rail-list" aria-live="polite">
-          <div class="rail-empty">鉄道情報を読み込み中…</div>
+        <div class="rail-status-heading">⚠️ 遅延・運転見合わせ</div>
+        <div id="rail-status-list" class="rail-list" role="status"><div class="rail-empty">運行情報を取得しています…</div></div>
+        <div class="rail-actions"><button type="button" id="refresh-rail">鉄道情報を更新</button>
+          <a href="https://transit.yahoo.co.jp/diainfo/area/4" target="_blank" rel="noopener noreferrer">関東の運行情報 ↗</a>
+          <a href="https://transit.yahoo.co.jp/diainfo/express" target="_blank" rel="noopener noreferrer">新幹線・特急 ↗</a>
         </div>
-        <div class="info-panel" style="margin-top:10px">
-          <div>
-            <strong>取得状況</strong>
-            <p id="rail-updated">データを確認しています…</p>
-          </div>
-          <button id="refresh-rail" type="button">↻ 運行情報を更新</button>
-        </div>
-        <div class="rail-source-grid" style="margin-top:10px">
-          <a href="https://transit.yahoo.co.jp/diainfo/area/4" target="_blank" rel="noopener noreferrer">
-            <strong>関東の運行情報 ↗</strong>
-            <span>JR・私鉄・地下鉄などの詳細を確認</span>
-          </a>
-          <a href="https://transit.yahoo.co.jp/diainfo/express" target="_blank" rel="noopener noreferrer">
-            <strong>新幹線の運行情報 ↗</strong>
-            <span>新幹線・特急などの情報を確認</span>
-          </a>
-        </div>
-        <p class="rail-status-note">※データはGitHub Actionsで定期取得します。取得エラーや古いデータの場合は正常運転と断定せず、上の公式情報源で最新状況を確認してください。</p>
+        <p id="rail-updated" class="rail-status-note">取得状況を確認しています…</p>
       </div>
     </section>
 

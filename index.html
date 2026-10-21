@@ -189,6 +189,14 @@
       </div>
     </div>
 
+    <section class="section" aria-labelledby="event-heading">
+      <h2 id="event-heading">📅 現在時刻付近のイベント</h2>
+      <p class="muted">入力された時刻の前後30分以内に該当するイベントを表示します。</p>
+      <div class="event-card-top"><strong>現在表示対象のイベント</strong><span id="event-now" class="event-count"></span></div>
+      <div id="event-results" class="event-list"><div class="event-empty">イベント一覧を入力して「保存して表示」を押してください。</div></div>
+      <p class="muted">※各行の先頭の時刻を判定時刻として扱います。時刻の前後30分ちょうども表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了時刻が不明な場合、実際の終演時刻とは一致しないことがあります。</p>
+    </section>
+
     <section class="section" aria-labelledby="yaesu-heading">
       <div class="section-head">
         <div>
@@ -263,6 +271,18 @@
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
+            <strong>🗺️ NAVITIME 高速道路渋滞マップ</strong>
+            <p class="muted">関東の高速道路の渋滞・規制情報を確認できます。枠内で表示できない場合は、公式ページを直接開いてください。</p>
+          </div>
+          <a class="link-button" href="https://trafficmap.navitime.co.jp/highway/kanto" target="_blank" rel="noopener noreferrer">NAVITIMEで直接開く ↗</a>
+        </div>
+        <iframe title="NAVITIME 関東高速道路渋滞マップ" src="https://trafficmap.navitime.co.jp/highway/kanto" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:420px;border:1px solid var(--border,#d5dce3);border-radius:10px;margin-top:12px;background:#fff"></iframe>
+        <p class="muted">※NAVITIME側の埋め込み制限により枠内が表示されない場合があります。その際は「NAVITIMEで直接開く」を使用してください。</p>
+      </div>
+
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
             <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
             <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
           </div>
@@ -278,15 +298,6 @@
         </div>
         <p class="muted">※公式サイトはフレーム内表示を認めていないため、ダッシュボード内への直接埋め込みではなく、公式マップを別画面で開く方式にしています。</p>
       </div>
-      <div class="traffic-feature">
-        <div class="traffic-feature-head">
-          <div>
-            <strong>🛣️ NEXCO東日本「ドラとら」</strong>
-            <p class="muted">東京外環道・関越道・東北道など、首都高以外の高速道路交通情報はこちら。</p>
-          </div>
-          <a class="link-button" href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer">ドラとらを開く ↗</a>
-        </div>
-      </div>
       <div class="legend-panel">
         <strong>🚗 交通状況の色の目安</strong>
         <p class="muted">凡例は一般的な目安です。実際の色・事故・通行止めなどは、必ず公式マップの表示を確認してください。</p>
@@ -301,11 +312,9 @@
       <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図へのリンクから最新情報を確認してください。</p>
     </section>
 
-    <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
-
-    <section class="section" aria-labelledby="event-heading">
-      <h2 id="event-heading">📅 イベント情報モニター</h2>
-      <p class="muted">イベント一覧をそのまま貼り付けて保存。入力した各時刻を基準に、前後30分以内のイベントだけを現在時刻に合わせて表示します。</p>
+    <section class="section" aria-labelledby="event-input-heading">
+      <h2 id="event-input-heading">📝 イベント情報の入力・編集</h2>
+      <p class="muted">イベント一覧をまとめて貼り付けて保存。入力内容はこの端末のブラウザに保存されます。</p>
       <div class="event-input-area">
         <label for="event-source"><strong>イベント情報（まとめて貼り付け）</strong></label>
         <textarea id="event-source" placeholder="例：
@@ -319,14 +328,17 @@
         </div>
         <p id="event-status" class="event-status" aria-live="polite">入力内容はこの端末のブラウザに保存されます。</p>
       </div>
-      <div class="event-card-top"><strong>現在表示対象のイベント</strong><span id="event-now" class="event-count"></span></div>
-      <div id="event-results" class="event-list"><div class="event-empty">イベント一覧を入力して「保存して表示」を押してください。</div></div>
+
       <p class="muted">※各行の先頭の時刻を判定時刻として扱います。時刻の前後30分ちょうども表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了時刻が不明な場合、実際の終演時刻とは一致しないことがあります。</p>
     </section>
 
+    <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
+
+
+
   </main>
 
-  <footer>こばちゃ専用ダッシュボード · 羽田空港国内線／高速道路交通情報</footer>
+  <footer>こばちゃ専用ダッシュボード · イベント情報／羽田空港国内線／高速道路交通情報</footer>
 
   <script>
 

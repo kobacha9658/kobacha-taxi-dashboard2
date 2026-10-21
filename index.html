@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10243a">
   <title>こばちゃ専用｜タクシー情報ダッシュボード</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
     :root {
       color-scheme: light;
@@ -93,15 +94,6 @@
     .rail-card a { color: var(--blue); font-size: .84rem; font-weight: 700; text-decoration: none; }
     .rail-card a:hover { text-decoration: underline; }
 
-
-    .rail-list { display: grid; gap: 8px; }
-    .rail-item { border: 1px solid #fecaca; background: #fff1f2; border-radius: 10px; padding: 10px 12px; }
-    .rail-item strong { color: #b91c1c; display: block; margin-bottom: 3px; }
-    .rail-item p { margin: 0; font-size: .84rem; line-height: 1.5; }
-    .rail-empty, .rail-error { border-radius: 10px; padding: 12px; background: #f8fafc; color: var(--muted); font-size: .88rem; line-height: 1.55; }
-    .rail-error { background: #fff7ed; color: #9a3412; }
-    .rail-meta { color: var(--muted); font-size: .76rem; margin-top: 10px; }
-
     @media (max-width: 380px) {
       main { padding: 10px; }
       .section { padding: 10px; }
@@ -119,28 +111,38 @@
     .rail-source-grid a strong{color:#075acb;font-size:.9rem}
     .rail-source-grid a span{color:#53657a;font-size:.77rem;line-height:1.35}
     @media(max-width:460px){.rail-source-grid{grid-template-columns:1fr 1fr}.rail-source-grid a{padding:9px}}
+    .rail-status-panel{border:1px solid #ffcaca;background:linear-gradient(135deg,#fff7f7,#fff);border-radius:14px;padding:12px}
+    .rail-status-heading{font-weight:800;color:#c62828;background:#ffeded;border-radius:9px;padding:10px 12px;margin-bottom:6px}
+    .rail-status-row{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 8px;border-bottom:1px solid #f2dddd;font-size:.92rem}
+    .rail-status-row strong{color:#183451}.rail-status-row>span:nth-child(2){color:#53657a;font-size:.85rem}
+    .rail-status-row a{color:#075acb;font-weight:700;text-decoration:none;white-space:nowrap}
+    .rail-status-note{font-size:.78rem;color:#6b7280;margin:12px 4px 2px}
+    @media(max-width:600px){.rail-status-row{grid-template-columns:1fr auto;gap:4px 8px}.rail-status-row>span:nth-child(2){grid-column:1/-1;grid-row:2}.rail-status-row .rail-links{grid-column:2;grid-row:1}}
 
-    .road-panel{border:1px solid var(--line);background:#f8fafc;border-radius:14px;padding:14px}
-    .road-heading{font-weight:800;color:#183451;background:#eaf2fb;border-radius:9px;padding:10px 12px;margin-bottom:10px}
-    .road-intro{font-size:.86rem;color:var(--muted);line-height:1.6;margin:0 2px 12px}
-    .road-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-    .road-legend-item{display:flex;align-items:flex-start;gap:9px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px;min-width:0}
-    .road-swatch{width:20px;height:20px;border-radius:5px;flex:0 0 20px;margin-top:2px}
-    .road-legend-item strong{display:block;font-size:.88rem;margin-bottom:3px}
-    .road-legend-item span{display:block;color:var(--muted);font-size:.76rem;line-height:1.45}
-    .road-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:13px}
-    .road-links a{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;text-decoration:none;min-width:0}
-    .road-links a strong{color:var(--blue);font-size:.9rem}
-    .road-links a span{color:var(--muted);font-size:.77rem;line-height:1.45}
-    .road-note{font-size:.76rem;color:var(--muted);line-height:1.55;margin:12px 3px 0}
-    @media(max-width:460px){.road-legend{grid-template-columns:1fr}.road-links{grid-template-columns:1fr}}
+    .muted { color: var(--muted); font-size: .85rem; line-height: 1.6; }
+    .official-panel, .legend-panel { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #f8fafc; }
+    .official-panel p { margin: 0 0 10px; }
+    .traffic-feature { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; overflow: hidden; }
+    .traffic-feature-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .traffic-feature-head p { margin: 5px 0 0; }
+    #highway-map { display:block; width:100%; height:500px; border:1px solid var(--line); border-radius:10px; margin-top:12px; background:#e9eef2; z-index:0; }
+    .map-caption { margin:8px 0 0; color:var(--muted); font-size:.8rem; line-height:1.5; }
+    .embed-fallback, .traffic-note { color:var(--muted); font-size:.8rem; line-height:1.6; }
+    .legend-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
+    .legend-grid > div { display:grid; grid-template-columns:18px 1fr; gap:2px 8px; align-items:center; font-size:.85rem; }
+    .legend-grid span { grid-column:2; color:var(--muted); font-size:.78rem; }
+    .legend-dot { display:block; width:15px; height:15px; border-radius:50%; grid-row:span 2; }
+    .legend-dot.green {background:#20a464}.legend-dot.yellow {background:#f2c230}.legend-dot.orange {background:#f28c28}.legend-dot.red {background:#d92d20}.legend-dot.gray {background:#8793a1}
+    @media(max-width:600px) { #highway-map { height:390px; } }
 
-    .flight-status-panel{border:1px solid var(--line);background:#f8fafc;border-radius:14px;padding:12px}
-    .flight-status-heading{font-weight:800;color:#183451;background:#eaf2fb;border-radius:9px;padding:10px 12px;margin-bottom:10px}
-    .flight-status-frame{display:block;width:100%;height:390px;border:1px solid var(--line);border-radius:10px;background:#fff}
-    .flight-status-note{font-size:.78rem;color:var(--muted);margin:12px 4px 2px;line-height:1.6}
-    @media(max-width:600px){.flight-status-frame{height:430px}}
-  </style>
+  
+    .map-preview-card{display:flex;align-items:center;gap:14px;padding:18px;margin-top:14px;border:1px solid var(--border,#d5dce3);border-radius:14px;background:var(--panel,#f6f8fa)}
+    .map-preview-icon{font-size:38px;flex:0 0 auto}
+    .map-preview-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+    .map-preview-copy span{font-size:.92rem;line-height:1.5;color:var(--muted,#667085)}
+    @media(max-width:600px){.map-preview-card{align-items:flex-start;flex-wrap:wrap}.map-preview-card .link-button{width:100%;text-align:center}}
+
+</style>
 </head>
 <body>
   <header>
@@ -217,55 +219,61 @@
       <div class="section-head">
         <div>
           <h2 id="flight-heading">✈️ 羽田空港 国内線の遅延・欠航</h2>
-          <p class="section-note">国内線の運航トラブルを公式情報で確認</p>
+          <p class="section-note">羽田空港公式の運航情報を確認</p>
         </div>
       </div>
-      <div class="flight-status-panel">
-        <div class="flight-status-heading">🛫 国内線 遅延・欠航情報（羽田空港公式）</div>
-        <p style="margin:0 2px 10px;line-height:1.65;color:#53657a;font-size:.9rem">
-          公式ページの運航状況を表示します。遅延・欠航がない場合は、公式ページ上に「現在この地域に遅延欠航はありません」と表示されます。
-        </p>
-        <iframe class="flight-status-frame" src="https://www.tokyo-haneda.com/flight/dms_cancel_delay.html" title="羽田空港 国内線の遅延・欠航状況（公式）" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        <p class="flight-status-note">※公式サイトが埋め込み表示を許可していない場合、ここに表示されないことがあります。その場合は下のリンクから公式ページを開いてください。通信エラー時は「ありません」と判断せず、公式ページで確認してください。</p>
+      <div class="official-panel">
+        <p><strong>🛫 国内線 遅延・欠航情報（羽田空港公式）</strong></p>
+        <p class="muted">公式ページを開いて最新状況を確認できます。埋め込み表示が制限されている場合もあるため、下のリンクを用意しています。表示・通信エラーを「遅延・欠航なし」と判断しないでください。</p>
         <a class="link-button" href="https://www.tokyo-haneda.com/flight/dms_cancel_delay.html" target="_blank" rel="noopener noreferrer">羽田空港公式の国内線遅延・欠航情報 ↗</a>
       </div>
     </section>
 
-
-    <section class="section" aria-labelledby="road-heading">
+    <section class="section" aria-labelledby="traffic-heading">
       <div class="section-head">
         <div>
-          <h2 id="road-heading">🚧 高速道路・渋滞情報</h2>
-          <p class="section-note">首都高を中心に、渋滞・事故・通行止めを公式情報で確認</p>
+          <h2 id="traffic-heading">🚧 高速道路・渋滞情報</h2>
+          <p class="section-note">高速道路の公式交通マップを開いて、渋滞・事故・通行止めを確認</p>
         </div>
       </div>
-      <div class="road-panel">
-        <div class="road-heading">🚗 交通状況・所要時間の色の目安</div>
-        <p class="road-intro">下の色は道路状況を見るときの一般的な目安です。実際の道路の色分け・判定は、リンク先の公式交通情報の表示を優先してください。</p>
-        <div class="road-legend" aria-label="交通状況の色の目安">
-          <div class="road-legend-item"><span class="road-swatch" style="background:#22a06b"></span><div><strong>緑：順調</strong><span>目立った渋滞が少なく、流れがスムーズ</span></div></div>
-          <div class="road-legend-item"><span class="road-swatch" style="background:#f2c94c"></span><div><strong>黄：やや混雑</strong><span>速度低下や軽い渋滞に注意</span></div></div>
-          <div class="road-legend-item"><span class="road-swatch" style="background:#f2994a"></span><div><strong>オレンジ：渋滞</strong><span>所要時間が延びる可能性あり</span></div></div>
-          <div class="road-legend-item"><span class="road-swatch" style="background:#d64545"></span><div><strong>赤：激しい渋滞</strong><span>大幅な遅れを見込んでルートを確認</span></div></div>
-          <div class="road-legend-item"><span class="road-swatch" style="background:#555b66"></span><div><strong>グレー：通行止め・規制</strong><span>通行規制の有無や迂回路を要確認</span></div></div>
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
+            <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
+            <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
+          </div>
+          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高マップを開く ↗</a>
         </div>
-        <div class="road-map-wrap" style="margin:14px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff">
-          <div style="padding:11px 12px;font-weight:800;background:#eaf2fb;color:#183451">🗺️ 首都高〜東京外環道エリアマップ</div>
-          <iframe title="首都高から東京外環道付近の地図" loading="lazy" style="display:block;width:100%;height:340px;border:0" src="https://www.openstreetmap.org/export/embed.html?bbox=139.45%2C35.55%2C139.95%2C35.85&layer=mapnik&marker=35.72%2C139.65"></iframe>
-          <div style="padding:9px 12px;color:var(--muted);font-size:.78rem;line-height:1.5">地図は位置確認用です。リアルタイムの渋滞色・通行規制は下の公式交通情報で確認してください。<br><a href="https://www.openstreetmap.org/?mlat=35.72&mlon=139.65#map=10/35.72/139.65" target="_blank" rel="noopener noreferrer">地図を大きく開く ↗</a></div>
-        </div>
-        <div class="road-links">
-          <a href="https://www.shutoko.jp/traffic/" target="_blank" rel="noopener noreferrer"><strong>首都高の交通情報 ↗</strong><span>都心環状線・羽田線・湾岸線などの渋滞、事故、通行止めを確認</span></a>
-          <a href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer"><strong>NEXCO東日本「ドラとら」↗</strong><span>関越道・東北道などの高速道路交通情報を確認</span></a>
-        </div>
-        <p class="road-note">※このパネルは交通状況の凡例と公式サイトへのリンクです。渋滞状況を自動取得しているわけではありません。所要時間や最新の規制は、リンク先で確認してください。</p>
+        <div id="highway-map" role="application" aria-label="東京周辺の道路地図"></div>
+        <p class="map-caption">地図：OpenStreetMap contributors。拡大・縮小・移動ができます。道路網とJCT周辺の位置確認用で、色分けされたリアルタイム渋滞情報ではありません。最新の渋滞・事故・通行止めは上の首都高公式マップ、外環道などは下のドラとらで確認してください。</p>
       </div>
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
+            <strong>🛣️ NEXCO東日本「ドラとら」</strong>
+            <p class="muted">東京外環道・関越道・東北道など、首都高以外の高速道路交通情報はこちら。</p>
+          </div>
+          <a class="link-button" href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer">ドラとらを開く ↗</a>
+        </div>
+      </div>
+      <div class="legend-panel">
+        <strong>🚗 交通状況の色の目安</strong>
+        <p class="muted">凡例は一般的な目安です。実際の色・事故・通行止めなどは、必ず公式マップの表示を確認してください。</p>
+        <div class="legend-grid">
+          <div><i class="legend-dot green"></i><b>緑：順調・規制表示</b><span>実際の判定は公式地図を確認</span></div>
+          <div><i class="legend-dot yellow"></i><b>黄：混雑</b><span>速度低下に注意</span></div>
+          <div><i class="legend-dot orange"></i><b>オレンジ：渋滞</b><span>所要時間が延びる可能性</span></div>
+          <div><i class="legend-dot red"></i><b>赤：強い渋滞・規制表示</b><span>表示内容を公式地図で確認</span></div>
+          <div><i class="legend-dot gray"></i><b>グレー：通行止め・規制</b><span>迂回や通行可否を確認</span></div>
+        </div>
+      </div>
+      <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図へのリンクから最新情報を確認してください。</p>
     </section>
 
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
   </main>
 
-  <footer>こばちゃ専用ダッシュボード · 羽田空港 国内線／高速道路交通情報</footer>
+  <footer>こばちゃ専用ダッシュボード · 羽田空港国内線／高速道路交通情報</footer>
 
   <script>
     const cameras = {
@@ -336,10 +344,37 @@
     refreshAll();
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
     setInterval(refreshAll, 60000);
-  
-
-    // 鉄道用JSON取得処理は削除済み。カメラ画像は60秒ごとに更新します。
-    // 運航状況は羽田空港公式ページを表示し、HTTP 404になる独自JSONへの依存を避けます.
   </script>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    (() => {
+      const el = document.getElementById('highway-map');
+      if (!el || !window.L) return;
+      const map = L.map(el, { scrollWheelZoom: false }).setView([35.6762, 139.7900], 10);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+      }).addTo(map);
+      const places = [
+        ['江戸橋JCT',35.6846,139.7778], ['箱崎JCT',35.6804,139.7874],
+        ['両国JCT',35.6957,139.7938], ['竹橋JCT',35.6905,139.7576],
+        ['三宅坂JCT',35.6802,139.7407], ['谷町JCT',35.6607,139.7358],
+        ['大橋JCT',35.6504,139.6847], ['熊野町JCT',35.7465,139.6976],
+        ['板橋JCT',35.7522,139.7068], ['江北JCT',35.7775,139.7704],
+        ['小菅JCT',35.7618,139.8218], ['堀切JCT',35.7449,139.8218],
+        ['葛西JCT',35.6500,139.8615], ['辰巳JCT',35.6458,139.8156],
+        ['有明JCT',35.6320,139.7900], ['大井JCT',35.5938,139.7506],
+        ['美女木JCT（外環）',35.8260,139.6380], ['川口JCT（外環）',35.8530,139.7360],
+        ['三郷JCT（外環）',35.8310,139.8670], ['大泉JCT（外環）',35.7590,139.5880]
+      ];
+      places.filter(p => Number.isFinite(p[2])).forEach(([name, lat, lon]) => {
+        L.circleMarker([lat, lon], { radius: 4, color: '#153d68', weight: 1.5, fillColor: '#ffffff', fillOpacity: 1 })
+          .bindTooltip(name, { direction: 'top', offset: [0, -3] }).addTo(map);
+      });
+      setTimeout(() => map.invalidateSize(), 250);
+    })();
+  </script>
+
 </body>
 </html>

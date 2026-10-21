@@ -31,6 +31,31 @@
       background: linear-gradient(135deg, var(--navy), var(--blue));
     }
     .header-inner, main, footer { width: min(1100px, 100%); margin: 0 auto; }
+    .header-inner { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+    .header-title { min-width:0; }
+    .gps-compact { display:flex; align-items:center; gap:8px; flex:0 0 auto; max-width:42%; padding:9px 11px; border:1px solid rgba(255,255,255,.25); border-radius:12px; background:rgba(255,255,255,.09); color:inherit; font:inherit; text-align:inherit; cursor:pointer; transition:background .15s ease; }
+    .gps-compact:hover { background:rgba(255,255,255,.16); }
+    .gps-compact:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+    .gps-compact-copy { min-width:0; text-align:right; }
+    .gps-label { margin:0 0 2px; color:#d5e6fa; font-size:.72rem; }
+    .gps-address { margin:0; color:#fff; font-size:.9rem; font-weight:750; line-height:1.35; white-space:pre-line; overflow-wrap:anywhere; }
+    .gps-status { margin:2px 0 0; color:#d5e6fa; font-size:.72rem; }
+    .gps-button { padding:7px 9px; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.13); color:#fff; font-size:.75rem; white-space:nowrap; }
+    .gps-button:disabled { opacity:.8; cursor:default; }
+    @media(max-width:600px) {
+      header { padding:15px 12px; }
+      .header-inner { align-items:flex-start; gap:9px; }
+      .gps-compact { max-width:48%; padding:7px; gap:5px; }
+      .gps-button { white-space:normal; max-width:76px; font-size:.68rem; padding:6px; }
+      .gps-address { font-size:.78rem; }
+      .gps-label,.gps-status { font-size:.65rem; }
+      .subtitle { font-size:.78rem; }
+    }
+    @media(max-width:390px) {
+      .header-inner { flex-direction:column; }
+      .gps-compact { align-self:stretch; max-width:none; justify-content:space-between; }
+      .gps-compact-copy { text-align:left; }
+    }
     .eyebrow { margin: 0 0 6px; color: #d5e6fa; font-size: .82rem; letter-spacing: .08em; }
     h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); line-height: 1.3; }
     .subtitle { margin: 8px 0 0; color: #e6eef7; font-size: .92rem; }
@@ -160,20 +185,20 @@
 </style>
 </head>
 <body>
-  <section class="gps-bar" aria-label="現在地" role="region">
-    <div class="gps-pin" aria-hidden="true">📍</div>
-    <div class="gps-copy">
-      <p class="gps-label">GPS現在地</p>
-      <p class="gps-address" id="gps-address">位置情報の許可が必要です</p>
-      <p class="gps-status" id="gps-status" aria-live="polite">許可すると移動に合わせて住所を更新します</p>
-    </div>
-    <button class="gps-button" id="gps-start" type="button">位置情報を許可</button>
-  </section>
   <header>
     <div class="header-inner">
-      <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
-      <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
-      <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
+      <div class="header-title">
+        <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
+        <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
+        <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
+      </div>
+      <section class="gps-compact" id="gps-start" role="button" tabindex="0" aria-label="タップして現在地を取得">
+        <div class="gps-compact-copy">
+          <p class="gps-label">📍 現在地</p>
+          <p class="gps-address" id="gps-address">タップして取得</p>
+          <p class="gps-status" id="gps-status" aria-live="polite">取得時刻 --:--:--</p>
+        </div>
+      </section>
     </div>
   </header>
 
@@ -368,7 +393,7 @@
       geocodeBusy = true;
       lastGeocodeAt = now;
       lastGeocodeCoords = point;
-      gpsStatus.textContent = `位置を取得しました（誤差 約${Math.round(accuracy)}m）。住所を確認中…`;
+      gpsStatus.textContent = '地名を確認中…';
       try {
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=ja`;
         const response = await fetch(url, {headers:{'Accept':'application/json'}});
@@ -376,15 +401,17 @@
         const data = await response.json();
         const a = data.address || {};
         const prefecture = a.province || a.state || a.prefecture || '';
-        const city = a.city || a.town || a.village || a.municipality || '';
-        const ward = a.city_district || a.suburb || a.quarter || a.neighbourhood || '';
-        const street = [a.road, a.house_number].filter(Boolean).join('');
-        const parts = [prefecture, city, ward, street].filter((v,i,arr) => v && arr.indexOf(v) === i);
-        gpsAddress.textContent = parts.join('') || data.display_name || '住所を特定できません';
-        gpsStatus.textContent = `最終取得 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
+        const city = a.city || a.municipality || a.town || a.village || '';
+        const ward = a.city_district || a.suburb || a.quarter || a.neighbourhood || a.hamlet || '';
+        // 番地・道路名は表示せず、「都道府県＋市区町村」と「町名」を2行で表示します。
+        const line1 = [prefecture, city].filter((v,i,arr) => v && arr.indexOf(v) === i).join('');
+        const line2 = ward && ward !== city ? ward : (a.neighbourhood || a.suburb || '');
+        gpsAddress.textContent = [line1, line2].filter(Boolean).join('\n') || a.county || '地名を特定できません';
+        gpsStatus.textContent = `取得時刻 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}`;
+        gpsStart.setAttribute('aria-label', '現在地を取得中。タップして再取得');
       } catch (e) {
         gpsAddress.textContent = '住所を取得できませんでした';
-        gpsStatus.textContent = 'GPS位置は取得済みです。通信状況を確認してください。';
+        gpsStatus.textContent = `取得時刻 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})} · 地名取得失敗`;
         lastGeocodeCoords = null;
       } finally { geocodeBusy = false; }
     }
@@ -397,23 +424,33 @@
       }
       if (gpsWatchId !== null) return;
       gpsAddress.textContent = '現在地を取得中…';
-      gpsStatus.textContent = 'ブラウザの位置情報許可を確認してください';
-      gpsStart.textContent = '位置情報を監視中';
-      gpsStart.disabled = true;
+      gpsStatus.textContent = '取得時刻 --:--:--';
+      gpsStart.setAttribute('aria-label', '現在地を取得中');
       gpsWatchId = navigator.geolocation.watchPosition(
         pos => updateAddress(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
         err => {
           const messages = {1:'位置情報が拒否されました。ブラウザ設定で許可してください。',2:'現在地を取得できません。GPSや通信状況を確認してください。',3:'位置情報の取得がタイムアウトしました。'};
           gpsAddress.textContent = '現在地を取得できません';
-          gpsStatus.textContent = messages[err.code] || '位置情報を取得できません';
-          gpsStart.textContent = 'もう一度試す';
-          gpsStart.disabled = false;
+          gpsStatus.textContent = '時刻 --:--';
+          gpsStart.setAttribute('aria-label', 'タップして現在地をもう一度取得');
           gpsWatchId = null;
         },
         {enableHighAccuracy:true, maximumAge:15000, timeout:20000}
       );
     }
-    gpsStart.addEventListener('click', startGps);
+    function requestGpsAgain() {
+      if (gpsWatchId !== null) {
+        // 取得済みでもタップで明示的に再取得できるように監視を再開始します。
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+        lastGeocodeCoords = null;
+      }
+      startGps();
+    }
+    gpsStart.addEventListener('click', requestGpsAgain);
+    gpsStart.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); requestGpsAgain(); }
+    });
 
     const cameras = {
       yaesu1: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg",

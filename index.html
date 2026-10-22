@@ -378,6 +378,8 @@
     // GPS位置を監視し、一定距離の移動があった場合だけ住所を再取得します。
     // 住所変換にはOpenStreetMap Nominatimを使用し、過度な連続リクエストを避けます。
     let gpsWatchId = null;
+    let gpsRefreshTimer = null;
+    let lastGpsCheckAt = 0;
     let lastGeocodeAt = 0;
     let lastGeocodeCoords = null;
     let geocodeBusy = false;
@@ -394,10 +396,15 @@
 
     async function updateAddress(lat, lon, accuracy) {
       const now = Date.now();
+      lastGpsCheckAt = now;
       const point = {lat, lon};
       const moved = !lastGeocodeCoords || distanceMeters(lastGeocodeCoords, point) >= 250;
-      // 初回は即時、その後は2分以上経過かつ250m以上移動したときだけ住所APIを呼びます。
-      if (geocodeBusy || (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 120000))) return;
+      // GPS確認は30秒ごと。住所APIは過度な連続アクセスを避け、250m以上移動かつ2分経過時に更新します。
+      if (geocodeBusy) return;
+      if (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 120000)) {
+        gpsStatus.textContent = `GPS最終確認 ${new Date(now).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
+        return;
+      }
       geocodeBusy = true;
       lastGeocodeAt = now;
       lastGeocodeCoords = point;
@@ -448,8 +455,17 @@
           gpsStart.disabled = false;
           gpsWatchId = null;
         },
-        {enableHighAccuracy:true, maximumAge:15000, timeout:20000}
+        {enableHighAccuracy:true, maximumAge:0, timeout:20000}
       );
+      // watchPositionに加えて30秒ごとに位置を問い合わせ、GPS情報の鮮度を保ちます。
+      if (gpsRefreshTimer !== null) clearInterval(gpsRefreshTimer);
+      gpsRefreshTimer = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+          pos => updateAddress(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
+          () => { gpsStatus.textContent = 'GPSを再確認中です。位置情報の許可・通信状況をご確認ください。'; },
+          {enableHighAccuracy:true, maximumAge:0, timeout:20000}
+        );
+      }, 30000);
     }
     gpsStart.addEventListener('click', startGps);
 

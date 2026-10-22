@@ -268,6 +268,15 @@
           <p class="section-note">待機プール全体と東側を並べて表示</p>
         </div>
       </div>
+      <div class="info-panel" style="display:block; margin-bottom:12px;">
+        <div><strong>🔗 羽田レーダー（毎日変わるURL）</strong><p class="section-note">その日のURLを貼り付けて保存できます。次回以降も入力欄に保持されます。</p></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+          <input id="haneda-radar-url" type="url" inputmode="url" autocomplete="url" placeholder="https://… 今日の羽田レーダーURLを貼り付け" aria-label="羽田レーダーのURL" style="flex:1 1 260px; min-width:0; padding:11px 12px; border:1px solid var(--line); border-radius:10px; font:inherit;">
+          <button type="button" id="save-haneda-radar-url">URLを保存</button>
+          <button type="button" id="open-haneda-radar-url">サイトに飛ぶ ↗</button>
+        </div>
+        <p id="haneda-radar-status" class="section-note" role="status" aria-live="polite" style="margin-top:7px;"></p>
+      </div>
       <div class="camera-grid">
         <article class="camera">
           <h3 class="camera-title">待機プール</h3>
@@ -888,6 +897,35 @@
       }catch(e){panel.classList.remove('visible');}
     }
     checkHanedaDelay(); setInterval(checkHanedaDelay,60000);
+
+    // 毎日変わる羽田レーダーURLを保存して、ボタンから開く
+    (() => {
+      const input = document.getElementById('haneda-radar-url');
+      const status = document.getElementById('haneda-radar-status');
+      const key = 'kobachaHanedaRadarUrl';
+      const saved = localStorage.getItem(key);
+      if (saved) input.value = saved;
+      document.getElementById('save-haneda-radar-url').addEventListener('click', () => {
+        const value = input.value.trim();
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('invalid protocol');
+          localStorage.setItem(key, parsed.href);
+          input.value = parsed.href;
+          status.textContent = 'URLを保存しました。明日URLが変わったら、ここを貼り替えて保存してね。';
+        } catch (e) { status.textContent = 'URLの形式を確認してね（https:// または http:// から始まるURL）。'; }
+      });
+      document.getElementById('open-haneda-radar-url').addEventListener('click', () => {
+        const value = input.value.trim();
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('invalid protocol');
+          localStorage.setItem(key, parsed.href);
+          window.open(parsed.href, '_blank', 'noopener,noreferrer');
+          status.textContent = 'サイトを別タブで開きます。';
+        } catch (e) { status.textContent = '先に有効なURLを貼り付けてね（https:// または http://）。'; }
+      });
+    })();
 
     refreshAll();
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。

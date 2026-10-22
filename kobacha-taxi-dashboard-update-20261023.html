@@ -494,9 +494,13 @@
           const lat=pos.coords.latitude, lon=pos.coords.longitude;
           const previous=lastGpsPoint ? {...lastGpsPoint} : null;
           updateAddress(lat, lon, pos.coords.accuracy || 0);
-          // GPS移動に合わせて駅一覧も自動更新。駅検索APIへの過剰アクセスを避け、100m移動ごとに再検索します。
+          // 初回GPS取得時に3km圏の駅を検索し、その後は移動中に100m以上移動した時だけ再検索します。
           const current={lat,lon};
-          if(previous && distanceMeters(previous,current)>=100 && (!lastStationRefreshPoint || distanceMeters(lastStationRefreshPoint,current)>=100)) {
+          if(!lastStationRefreshPoint) {
+            lastStationRefreshPoint=current;
+            if(stationRefreshTimer) clearTimeout(stationRefreshTimer);
+            stationRefreshTimer=setTimeout(()=>{ if(typeof findNearbyStations==='function') findNearbyStations(); },500);
+          } else if(distanceMeters(lastStationRefreshPoint,current)>=100) {
             if(stationRefreshTimer) clearTimeout(stationRefreshTimer);
             stationRefreshTimer=setTimeout(()=>{ if(typeof findNearbyStations==='function') findNearbyStations(); lastStationRefreshPoint=current; },1200);
           }

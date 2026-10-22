@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10243a">
+  <meta name="theme-color" content="#c9efff">
   <title>こばちゃ専用｜タクシー情報ダッシュボード</title>
   <style>
     :root {
@@ -27,22 +27,22 @@
     }
     header {
       padding: 24px 16px 20px;
-      color: #fff;
-      background: linear-gradient(135deg, var(--navy), var(--blue));
+      color: #17334a;
+      background: linear-gradient(135deg, #d9f4ff, #bfeaff);
     }
     .header-inner, main, footer { width: min(1100px, 100%); margin: 0 auto; }
     .header-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,.85fr); gap:24px; align-items:center; }
     .header-title { min-width:0; }
-    .eyebrow { margin: 0 0 6px; color: #d5e6fa; font-size: .82rem; letter-spacing: .08em; }
+    .eyebrow { margin: 0 0 6px; color: #52788f; font-size: .82rem; letter-spacing: .08em; }
     h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); line-height: 1.3; }
-    .subtitle { margin: 8px 0 0; color: #e6eef7; font-size: .92rem; }
-    .gps-bar { display:flex; align-items:center; gap:12px; margin-top:0; padding:12px 14px; border:1px solid rgba(255,255,255,.28); border-radius:14px; background:rgba(255,255,255,.12); color:#fff; min-width:0; }
+    .subtitle { margin: 8px 0 0; color: #42677e; font-size: .92rem; }
+    .gps-bar { display:flex; align-items:center; gap:12px; margin-top:0; padding:12px 14px; border:1px solid rgba(255,255,255,.28); border-radius:14px; background:rgba(255,255,255,.55); color:#17334a; min-width:0; }
     .gps-pin { font-size:1.45rem; flex:0 0 auto; }
     .gps-copy { min-width:0; flex:1; }
-    .gps-label { margin:0 0 3px; color:#d5e6fa; font-size:.78rem; font-weight:700; }
+    .gps-label { margin:0 0 3px; color:#52788f; font-size:.78rem; font-weight:700; }
     .gps-address { margin:0; font-size:.95rem; font-weight:700; line-height:1.45; overflow-wrap:anywhere; }
-    .gps-status { margin:4px 0 0; color:#e6eef7; font-size:.76rem; line-height:1.4; }
-    .gps-button { flex:0 0 auto; background:#fff; color:var(--navy); }
+    .gps-status { margin:4px 0 0; color:#42677e; font-size:.76rem; line-height:1.4; }
+    .gps-button { flex:0 0 auto; background:#fff; color:var(--navy); border:1px solid #b5d9eb; }
     @media (max-width:680px) { .header-layout { grid-template-columns:minmax(0,1fr); gap:16px; } .gps-bar { align-items:flex-start; flex-wrap:wrap; } .gps-copy { flex-basis:calc(100% - 44px); } .gps-button { margin-left:42px; } }
     main { padding: 16px; }
     .toolbar {
@@ -136,7 +136,10 @@
     .event-list { display:grid; gap:8px; margin-top:10px; }
     .event-item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; }
     .event-item.is-near { border-color:#e0a323; background:#fff8e7; }
-    .event-item.is-past { opacity:.7; }
+    .event-item.is-past { border-color:#efb7b7; background:#fff0f0; }
+    .event-item.is-future { border-color:#b8dfbf; background:#effaf0; }
+    .event-item.is-past .event-tag { background:#f8dada; color:#8f3030; }
+    .event-item.is-future .event-tag { background:#d9f0dd; color:#24683a; }
     .event-item-head { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
     .event-time { font-weight:800; font-size:1.02rem; color:var(--navy); white-space:nowrap; }
     .event-tag { font-size:.75rem; font-weight:700; border-radius:999px; padding:3px 8px; background:#e8edf2; color:#334155; }
@@ -557,7 +560,7 @@
       alertBox.appendChild(heading);
       for (const ev of active) {
         const item = document.createElement('article');
-        item.className = 'event-item is-near';
+        item.className = 'event-item is-near ' + (ev.date < now ? 'is-past' : 'is-future');
         const head = document.createElement('div'); head.className = 'event-item-head';
         const time = document.createElement('span'); time.className = 'event-time';
         time.textContent = `${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time} 終了予定`;
@@ -595,11 +598,11 @@
         eventList.appendChild(empty);
       } else {
         for (const ev of activeEvents) {
-          const item = document.createElement('article'); item.className='event-item is-near';
+          const item = document.createElement('article'); item.className='event-item is-near ' + (ev.date < now ? 'is-past' : 'is-future');
           const head = document.createElement('div'); head.className='event-item-head';
           const time = document.createElement('span'); time.className='event-time'; time.textContent=`${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time}`;
           head.appendChild(time);
-          const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent='⏰ 時刻の前後30分'; head.appendChild(tag);
+          const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent=ev.date < now ? '終了予定時刻経過' : '終了予定時刻前'; head.appendChild(tag);
           const detail = document.createElement('p'); detail.className='event-detail'; detail.textContent=ev.detail;
           item.append(head,detail); eventList.appendChild(item);
         }
@@ -641,6 +644,28 @@
       });
     });
 
+
+    function normalizeRailLine(rawLine, operator='') {
+      let line=String(rawLine).trim();
+      if(!line) return '';
+      // Prefix abbreviated route names with their railway company where known.
+      if(/^(JR|ＪＲ)/i.test(line)) {
+        line=line.replace(/^(ＪＲ)/i,'JR');
+        return /線|新幹線|電車/.test(line) ? line : `JR${line}線`;
+      }
+      const prefixes=[
+        [/西武鉄道|西武/i,'西武'],[/東武鉄道|東武/i,'東武'],[/京王電鉄|京王/i,'京王'],
+        [/小田急電鉄|小田急/i,'小田急'],[/京成電鉄|京成/i,'京成'],[/京浜急行|京急/i,'京急'],
+        [/東京急行|東急/i,'東急'],[/相模鉄道|相鉄/i,'相鉄'],[/東日本旅客鉄道|JR East|JR東日本/i,'JR'],
+        [/東京地下鉄|東京メトロ/i,'東京メトロ'],[/東京都交通局|都営地下鉄/i,'都営地下鉄']
+      ];
+      let prefix='';
+      for(const [pattern,label] of prefixes){if(pattern.test(operator)){prefix=label;break;}}
+      if(prefix && !line.startsWith(prefix)) line=prefix+line;
+      if(prefix && prefix!=='東京メトロ' && prefix!=='都営地下鉄' && !/線|新幹線/.test(line)) line+='線';
+      return line;
+    }
+
     // 周辺駅：Overpass APIを使用し、路面電車・ライトレールを除外。駅名が同じで近接する重複候補は統合。
     let lastGpsPoint = null;
     const originalUpdateAddress = updateAddress;
@@ -659,9 +684,17 @@
           const lat2=e.lat??e.center?.lat, lon2=e.lon??e.center?.lon;if(lat2==null||lon2==null)continue;
           const dist=Math.round(distanceMeters({lat,lon},{lat:lat2,lon:lon2}));if(dist>3000)continue;
           const subway=t.station==='subway'||t.subway==='yes'||/地下鉄|メトロ/.test(t.operator||'');
-          let line=t['line']||t['railway:line']||t['name:line']||t['railway:ref']||t.ref||'';
-          if(!line && /東日本旅客鉄道|JR East|JR東日本/i.test(t.operator||'')) line='JR線（路線名データなし）';
-          else if(!line && t.operator) line=t.operator;
+          let line=t['line']||t['railway:line']||t['name:line']||t['railway:ref']||'';
+          const operator=t.operator||t['operator:ja']||'';
+          if(line) line=normalizeRailLine(line,operator);
+          else if(/東日本旅客鉄道|JR East|JR東日本|JRグループ/i.test(operator)) line='JR線（路線名データなし）';
+          else if(/西武鉄道|西武/i.test(operator)) line='西武線（路線名データなし）';
+          else if(/東武鉄道|東武/i.test(operator)) line='東武線（路線名データなし）';
+          else if(/京王電鉄|京王/i.test(operator)) line='京王線（路線名データなし）';
+          else if(/小田急電鉄|小田急/i.test(operator)) line='小田急線（路線名データなし）';
+          else if(/東京地下鉄|東京メトロ/i.test(operator)) line='東京メトロ（路線名データなし）';
+          else if(/都営地下鉄|東京都交通局/i.test(operator)) line='都営地下鉄（路線名データなし）';
+          else if(operator) line=operator;
           candidates.push({name,dist,subway,line,lat:lat2,lon:lon2}); }
         candidates.sort((a,b)=>a.dist-b.dist);
         // 同じ駅名の上下線・複数ホームは1つにまとめ、路線情報を統合して表示。

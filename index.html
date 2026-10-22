@@ -424,10 +424,13 @@
         const a = data.address || {};
         const prefecture = a.province || a.state || a.prefecture || '';
         const city = a.city || a.municipality || a.town || a.village || '';
-        const ward = a.city_district || a.suburb || a.quarter || a.neighbourhood || a.hamlet || '';
-        // 番地・道路名は表示せず、「都道府県＋市区町村」と「町名」を2行で表示します。
-        const line1 = [prefecture, city].filter((v,i,arr) => v && arr.indexOf(v) === i).join('');
-        const line2 = ward && ward !== city ? ward : (a.neighbourhood || a.suburb || '');
+        // さいたま市・横浜市・川崎市などの政令指定都市は、区名も1行目に含めます。
+        // 町名・大字などは2行目に表示し、番地や道路名は表示しません。
+        const wardCandidate = a.city_district || a.suburb || '';
+        const isDesignatedCity = /市$/.test(city) && /さいたま市|横浜市|川崎市|相模原市|千葉市|新潟市|静岡市|浜松市|名古屋市|京都市|大阪市|堺市|神戸市|岡山市|広島市|北九州市|福岡市|熊本市/.test(city);
+        const ward = isDesignatedCity && wardCandidate && wardCandidate !== city ? wardCandidate : '';
+        const line1 = [prefecture, city, ward].filter((v,i,arr) => v && arr.indexOf(v) === i).join('');
+        const line2 = [a.quarter, a.neighbourhood, a.hamlet, (!isDesignatedCity ? wardCandidate : ''), a.residential].find(v => v && v !== city && v !== ward) || '';
         gpsAddress.textContent = [line1, line2].filter(Boolean).join('\n') || a.county || '地名を特定できません';
         gpsStatus.textContent = `取得時刻 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}`;
         gpsStart.setAttribute('aria-label', '現在地を取得中。タップして再取得');

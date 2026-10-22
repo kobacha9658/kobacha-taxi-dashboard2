@@ -284,6 +284,18 @@
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
+            <strong>🗺️ NAVITIME 高速道路渋滞マップ</strong>
+            <p class="muted">関東の高速道路の渋滞・規制情報を確認できます。枠内で表示できない場合は、公式ページを直接開いてください。</p>
+          </div>
+          <a class="link-button" href="https://trafficmap.navitime.co.jp/highway/kanto" target="_blank" rel="noopener noreferrer">NAVITIMEで直接開く ↗</a>
+        </div>
+        <iframe title="NAVITIME 関東高速道路渋滞マップ" src="https://trafficmap.navitime.co.jp/highway/kanto" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:420px;border:1px solid var(--border,#d5dce3);border-radius:10px;margin-top:12px;background:#fff"></iframe>
+        <p class="muted">※NAVITIME側の埋め込み制限により枠内が表示されない場合があります。その際は「NAVITIMEで直接開く」を使用してください。</p>
+      </div>
+
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
             <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
             <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
           </div>
@@ -299,15 +311,6 @@
         </div>
         <p class="muted">※公式サイトはフレーム内表示を認めていないため、ダッシュボード内への直接埋め込みではなく、公式マップを別画面で開く方式にしています。</p>
       </div>
-      <div class="traffic-feature">
-        <div class="traffic-feature-head">
-          <div>
-            <strong>🛣️ NEXCO東日本「ドラとら」</strong>
-            <p class="muted">東京外環道・関越道・東北道など、首都高以外の高速道路交通情報はこちら。</p>
-          </div>
-          <a class="link-button" href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer">ドラとらを開く ↗</a>
-        </div>
-      </div>
       <div class="legend-panel">
         <strong>🚗 交通状況の色の目安</strong>
         <p class="muted">凡例は一般的な目安です。実際の色・事故・通行止めなどは、必ず公式マップの表示を確認してください。</p>
@@ -320,6 +323,26 @@
         </div>
       </div>
       <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図へのリンクから最新情報を確認してください。</p>
+    </section>
+
+    <section class="section" aria-labelledby="event-input-heading">
+      <h2 id="event-input-heading">📝 イベント情報の入力・編集</h2>
+      <p class="muted">イベント一覧をまとめて貼り付けて保存。入力内容はこの端末のブラウザに保存されます。</p>
+      <div class="event-input-area">
+        <label for="event-source"><strong>イベント情報（まとめて貼り付け）</strong></label>
+        <textarea id="event-source" placeholder="例：
+[明日] 10/21 水
+[時刻表（終演順）]
+15:10 ｜ 明治座 (公演 ¥7000) ｜ 出演者
+17:00 ｜ 国際フォーラム (コンサート ¥8800)"></textarea>
+        <div class="event-actions">
+          <button id="event-save" type="button">保存して表示</button>
+          <button id="event-clear" class="secondary" type="button">入力を消去</button>
+        </div>
+        <p id="event-status" class="event-status" aria-live="polite">入力内容はこの端末のブラウザに保存されます。</p>
+      </div>
+
+      <p class="muted">※各行の先頭の時刻を判定時刻として扱います。時刻の前後30分ちょうども表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了時刻が不明な場合、実際の終演時刻とは一致しないことがあります。</p>
     </section>
 
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>

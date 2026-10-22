@@ -420,9 +420,12 @@
         const prefecture = a.province || a.state || a.prefecture || '';
         const municipality = a.city || a.town || a.village || a.municipality || '';
         const ward = a.city_district || a.county || '';
-        // 丁目・番地・道路名は表示せず、市区町村＋町域までに整えます。
-        const townArea = a.suburb || a.neighbourhood || a.quarter || a.city_district || '';
-        const parts = [prefecture, municipality, ward, townArea].filter((v,i,arr) => v && arr.indexOf(v) === i);
+        // 番地・建物番号・丁目は表示せず、町域名までを表示します。
+        const townArea = [a.suburb, a.quarter, a.neighbourhood]
+          .filter((v,i,arr) => v && arr.indexOf(v) === i)
+          .map(v => v.replace(/[一二三四五六七八九十百〇0-9]+丁目/g, '').trim())
+          .filter(Boolean);
+        const parts = [prefecture, municipality, ward, ...townArea].filter((v,i,arr) => v && arr.indexOf(v) === i);
         gpsAddress.textContent = parts.join('') || '住所を特定できません';
         gpsStatus.textContent = `最終取得 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
       } catch (e) {

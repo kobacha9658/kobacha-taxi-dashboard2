@@ -587,16 +587,22 @@
         return;
       }
       const now = new Date();
-      for (const ev of events) {
-        const delta = (ev.date - now) / 60000;
-        const near = Math.abs(delta) <= 30;
-        const item = document.createElement('article'); item.className='event-item' + (near?' is-near':'') + (delta < -30?' is-past':'');
-        const head = document.createElement('div'); head.className='event-item-head';
-        const time = document.createElement('span'); time.className='event-time'; time.textContent=`${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time}`;
-        head.appendChild(time);
-        const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent=near?'⏰ 時刻の前後30分':(delta < -30?'時刻経過':'予定'); head.appendChild(tag);
-        const detail = document.createElement('p'); detail.className='event-detail'; detail.textContent=ev.detail;
-        item.append(head,detail); eventList.appendChild(item);
+      // 登録済みイベント欄には、黄色ハイライト対象（終了予定時刻の前後30分以内）のみ表示する。
+      const activeEvents = events.filter(ev => Math.abs((ev.date - now) / 60000) <= 30);
+      if (!activeEvents.length) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent='現在、終了予定時刻の前後30分以内に該当するイベントはありません。';
+        eventList.appendChild(empty);
+      } else {
+        for (const ev of activeEvents) {
+          const item = document.createElement('article'); item.className='event-item is-near';
+          const head = document.createElement('div'); head.className='event-item-head';
+          const time = document.createElement('span'); time.className='event-time'; time.textContent=`${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time}`;
+          head.appendChild(time);
+          const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent='⏰ 時刻の前後30分'; head.appendChild(tag);
+          const detail = document.createElement('p'); detail.className='event-detail'; detail.textContent=ev.detail;
+          item.append(head,detail); eventList.appendChild(item);
+        }
       }
       renderStationEventAlerts(events, now);
     }

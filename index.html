@@ -214,6 +214,15 @@
   </header>
 
 
+    <section class="section" aria-label="外部アプリ">
+      <div class="section-head"><div><h2>📲 外部アプリ</h2><p class="section-note">タップして情報を確認</p></div></div>
+      <div class="actions">
+        <a class="link-button" href="discord://-/channels/@me" onclick="setTimeout(()=>{if(!document.hidden)window.location.href='https://discord.com/app'},700)" rel="noopener noreferrer">Discordを開く ↗</a>
+        <a class="link-button" href="https://apps.apple.com/jp/app/jr東日本アプリ/id985521074" target="_blank" rel="noopener noreferrer">JR東日本アプリ ↗</a>
+      </div>
+      <p class="station-note">※ Discordはアプリ起動を試し、開けない場合はWeb版へ移動します。JR東日本アプリはApp Storeの案内を開きます。</p>
+    </section>
+
     <section class="nearby-stations" aria-labelledby="nearby-title">
       <div class="nearby-head"><h2 id="nearby-title">🚉 GPS周辺の駅（半径3km）</h2><button class="station-retry" id="station-retry" type="button">駅を再検索</button></div>
       <div class="nearby-meta" id="station-status" aria-live="polite">現在地を取得すると周辺の駅を表示します。</div>
@@ -494,7 +503,7 @@
       stationStatus.textContent = '半径3km以内の駅を検索中…';
       stationList.replaceChildren();
       try {
-        const query = `[out:json][timeout:20];(node(around:3000,${lat},${lon})[railway=station];way(around:3000,${lat},${lon})[railway=station];relation(around:3000,${lat},${lon})[railway=station];node(around:3000,${lat},${lon})[public_transport=station];);out center tags;`;
+        const query = `[out:json][timeout:25];(node(around:3000,${lat},${lon})[railway=station];way(around:3000,${lat},${lon})[railway=station];relation(around:3000,${lat},${lon})[railway=station];node(around:3000,${lat},${lon})[public_transport=station];way(around:3000,${lat},${lon})[public_transport=station];relation(around:3000,${lat},${lon})[public_transport=station];);out center tags;`;
         const response = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query));
         if (!response.ok) throw new Error('駅データ取得エラー');
         const data = await response.json();
@@ -504,16 +513,18 @@
           const name = tags['name:ja'] || tags.name;
           if (!name) continue;
           const railway = tags.railway || '';
-          const mode = [tags.station, tags.railway, tags.route, tags.network, tags.operator, tags.name, tags['name:ja']].join(' ').toLowerCase();
+          const mode = [tags.station, tags.railway, tags.route, tags.network, tags.operator, tags.name, tags['name:ja'], tags.subway, tags.light_rail].join(' ').toLowerCase();
           // 路面電車・トラム系を除外。世田谷線の駅名や運行形態がタグに出るケースも弾く。
           if (['tram','light_rail','streetcar'].includes(railway) || /世田谷線|tram|streetcar|路面電車/.test(mode)) continue;
           const elLat = el.lat ?? el.center?.lat, elLon = el.lon ?? el.center?.lon;
           if (typeof elLat !== 'number' || typeof elLon !== 'number') continue;
           const dist = stationDistance(lat,lon,elLat,elLon);
           if (dist > 3000) continue;
-          const key = name + ':' + Math.round(elLat*10000) + ':' + Math.round(elLon*10000);
-          const prior = found.get(key);
-          if (!prior || dist < prior.dist) found.set(key,{name,dist,railway});
+          const lineInfo = [tags['line'], tags.network, tags.operator].filter(Boolean).join(' · ');
+          // 同じ駅名の鉄道事業者別・路線別オブジェクトは、近接していれば同一駅にまとめる。離れた同名駅（例：浅草駅）は別々に残す。
+          const existingKey = [...found.keys()].find(k => { const v=found.get(k); return v.name===name && stationDistance(v.lat,v.lon,elLat,elLon)<=250; });
+          if (existingKey) { const prior=found.get(existingKey); if (lineInfo && !prior.lines.includes(lineInfo)) prior.lines.push(lineInfo); if (dist<prior.dist) {prior.dist=dist;prior.lat=elLat;prior.lon=elLon;} }
+          else { const key=name+':'+Math.round(elLat*10000)+':'+Math.round(elLon*10000); found.set(key,{name,dist,lat:elLat,lon:elLon,railway,lines:lineInfo?[lineInfo]:[]}); }
         }
         const stations = [...found.values()].sort((a,b)=>a.dist-b.dist);
         if (!stations.length) {
@@ -521,12 +532,14 @@
         } else {
           for (const station of stations) {
             const item = document.createElement('div'); item.className='station-item';
-            const name = document.createElement('span'); name.className='station-name'; name.textContent=station.name;
+            const copy = document.createElement('div'); copy.style.minWidth='0';
+            const name = document.createElement('div'); name.className='station-name'; name.textContent=station.name; copy.append(name);
+            if (station.lines.length) { const lines=document.createElement('div'); lines.className='station-distance'; lines.style.whiteSpace='normal'; lines.textContent=[...new Set(station.lines)].join(' / '); copy.append(lines); }
             const distance = document.createElement('span'); distance.className='station-distance'; distance.textContent=station.dist < 1000 ? `${Math.round(station.dist/10)*10} m` : `${(station.dist/1000).toFixed(1)} km`;
-            item.append(name,distance); stationList.append(item);
+            item.append(copy,distance); stationList.append(item);
           }
         }
-        stationStatus.textContent = `半径3km以内：${stations.length}駅 · 更新 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}`;
+        stationStatus.textContent = `半径3km以内：${stations.length}駅（地下鉄を含む） · 更新 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}`;
       } catch (e) {
         stationList.innerHTML = '<div class="event-empty">駅データを取得できませんでした。通信状況を確認して「駅を再検索」を押してください。</div>';
         stationStatus.textContent = '駅検索に失敗しました';

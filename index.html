@@ -383,6 +383,8 @@
     let lastGeocodeAt = 0;
     let lastGeocodeCoords = null;
     let geocodeBusy = false;
+    let lastStationRefreshPoint = null;
+    let stationRefreshTimer = null;
     const gpsAddress = document.getElementById('gps-address');
     const gpsStatus = document.getElementById('gps-status');
     const gpsStart = document.getElementById('gps-start');
@@ -398,10 +400,10 @@
       const now = Date.now();
       lastGpsCheckAt = now;
       const point = {lat, lon};
-      const moved = !lastGeocodeCoords || distanceMeters(lastGeocodeCoords, point) >= 250;
-      // GPS確認は30秒ごと。住所APIは過度な連続アクセスを避け、250m以上移動かつ2分経過時に更新します。
+      const moved = !lastGeocodeCoords || distanceMeters(lastGeocodeCoords, point) >= 10;
+      // GPS座標はwatchPositionで常時監視。住所は10m以上の移動で再取得し、外部APIへの連続アクセスを避けるため最低1秒間隔にします。
       if (geocodeBusy) return;
-      if (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 120000)) {
+      if (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 1000)) {
         gpsStatus.textContent = `GPS最終確認 ${new Date(now).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
         return;
       }
@@ -416,16 +418,12 @@
         const data = await response.json();
         const a = data.address || {};
         const prefecture = a.province || a.state || a.prefecture || '';
-        const city = a.city || a.town || a.village || a.municipality || '';
+        const municipality = a.city || a.town || a.village || a.municipality || '';
         const ward = a.city_district || a.county || '';
-        const neighbourhood = a.neighbourhood || a.suburb || a.quarter || a.city_district || '';
-        const street = [a.road, a.house_number].filter(Boolean).join('');
-        const top = [prefecture, city, ward].filter((v,i,arr) => v && arr.indexOf(v) === i).join('');
-        gpsAddress.replaceChildren();
-        const line1 = document.createElement('span'); line1.textContent = top || data.display_name || '住所を特定できません';
-        gpsAddress.appendChild(line1);
-        if (neighbourhood && neighbourhood !== ward) { const line2 = document.createElement('span'); line2.style.display='block'; line2.textContent=neighbourhood + (street ? street : ''); gpsAddress.appendChild(line2); }
-        else if (street) { const line2 = document.createElement('span'); line2.style.display='block'; line2.textContent=street; gpsAddress.appendChild(line2); }
+        // 丁目・番地・道路名は表示せず、市区町村＋町域までに整えます。
+        const townArea = a.suburb || a.neighbourhood || a.quarter || a.city_district || '';
+        const parts = [prefecture, municipality, ward, townArea].filter((v,i,arr) => v && arr.indexOf(v) === i);
+        gpsAddress.textContent = parts.join('') || '住所を特定できません';
         gpsStatus.textContent = `最終取得 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
       } catch (e) {
         gpsAddress.textContent = '住所を取得できませんでした';
@@ -446,7 +444,17 @@
       gpsStart.textContent = '位置情報を監視中';
       gpsStart.disabled = true;
       gpsWatchId = navigator.geolocation.watchPosition(
-        pos => updateAddress(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
+        pos => {
+          const lat=pos.coords.latitude, lon=pos.coords.longitude;
+          const previous=lastGpsPoint ? {...lastGpsPoint} : null;
+          updateAddress(lat, lon, pos.coords.accuracy || 0);
+          // GPS移動に合わせて駅一覧も自動更新。駅検索APIへの過剰アクセスを避け、100m移動ごとに再検索します。
+          const current={lat,lon};
+          if(previous && distanceMeters(previous,current)>=100 && (!lastStationRefreshPoint || distanceMeters(lastStationRefreshPoint,current)>=100)) {
+            if(stationRefreshTimer) clearTimeout(stationRefreshTimer);
+            stationRefreshTimer=setTimeout(()=>{ if(typeof findNearbyStations==='function') findNearbyStations(); lastStationRefreshPoint=current; },1200);
+          }
+        },
         err => {
           const messages = {1:'位置情報が拒否されました。ブラウザ設定で許可してください。',2:'現在地を取得できません。GPSや通信状況を確認してください。',3:'位置情報の取得がタイムアウトしました。'};
           gpsAddress.textContent = '現在地を取得できません';
@@ -457,15 +465,7 @@
         },
         {enableHighAccuracy:true, maximumAge:0, timeout:20000}
       );
-      // watchPositionに加えて30秒ごとに位置を問い合わせ、GPS情報の鮮度を保ちます。
-      if (gpsRefreshTimer !== null) clearInterval(gpsRefreshTimer);
-      gpsRefreshTimer = setInterval(() => {
-        navigator.geolocation.getCurrentPosition(
-          pos => updateAddress(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
-          () => { gpsStatus.textContent = 'GPSを再確認中です。位置情報の許可・通信状況をご確認ください。'; },
-          {enableHighAccuracy:true, maximumAge:0, timeout:20000}
-        );
-      }, 30000);
+      // watchPositionでGPS座標を常時監視します（30秒ごとのポーリングに限定しません）。
     }
     gpsStart.addEventListener('click', startGps);
 

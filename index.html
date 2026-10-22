@@ -664,10 +664,12 @@
           else if(!line && t.operator) line=t.operator;
           candidates.push({name,dist,subway,line,lat:lat2,lon:lon2}); }
         candidates.sort((a,b)=>a.dist-b.dist);
-        const unique=[]; for(const st of candidates){const existing=unique.find(x=>x.name===st.name&&distanceMeters({lat:x.lat,lon:x.lon},{lat:st.lat,lon:st.lon})<350);if(existing){if(st.line&&!existing.line)existing.line=st.line;if(st.subway)existing.subway=true;}else unique.push(st);}
+        // 同じ駅名の上下線・複数ホームは1つにまとめ、路線情報を統合して表示。
+        const unique=[]; for(const st of candidates){const existing=unique.find(x=>x.name===st.name);if(existing){existing.dist=Math.min(existing.dist,st.dist);if(st.line&&!existing.lines.includes(st.line))existing.lines.push(st.line);if(st.subway)existing.subway=true;}else unique.push({...st,lines:st.line?[st.line]:[]});}
+        unique.sort((a,b)=>a.dist-b.dist);
         if(!unique.length){status.textContent='3km以内の駅が見つかりませんでした。';return;}
-        for(const st of unique.slice(0,40)){const item=document.createElement('div');item.className='station-item';const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;const meta=document.createElement('small');meta.textContent=`約${st.dist}m${st.line?' · '+st.line:''}`;item.append(title,meta);list.appendChild(item);}
-        status.textContent=`3km以内：${unique.length}駅（近接する同名候補は統合） · 路面電車・ライトレール除外`;
+        for(const st of unique.slice(0,40)){const item=document.createElement('div');item.className='station-item';const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;const meta=document.createElement('small');meta.textContent=`約${st.dist}m${st.lines.length?' · '+st.lines.join('・'):''}`;item.append(title,meta);list.appendChild(item);}
+        status.textContent=`3km以内：${unique.length}駅（同じ駅名の上下線・複数ホームは統合） · 路面電車・ライトレール除外`;
       }catch(e){status.textContent='駅情報を取得できませんでした。通信状況を確認して再検索してください。';}
     }
     document.getElementById('station-refresh').addEventListener('click',findNearbyStations);

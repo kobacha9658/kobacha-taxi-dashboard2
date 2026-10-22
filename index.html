@@ -128,6 +128,21 @@
     .rail-status-note{font-size:.78rem;color:#6b7280;margin:12px 4px 2px}
     @media(max-width:600px){.rail-status-row{grid-template-columns:1fr auto;gap:4px 8px}.rail-status-row>span:nth-child(2){grid-column:1/-1;grid-row:2}.rail-status-row .rail-links{grid-column:2;grid-row:1}}
 
+    .event-input-area { border:1px solid var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    #event-source { display:block; width:100%; min-height:150px; margin-top:8px; padding:10px; border:1px solid var(--line); border-radius:10px; font:inherit; font-size:.9rem; resize:vertical; }
+    .event-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .event-status { margin:10px 0 0; color:var(--muted); font-size:.82rem; line-height:1.5; }
+    .event-display { margin:0 0 14px; }
+    .event-list { display:grid; gap:8px; margin-top:10px; }
+    .event-item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; }
+    .event-item.is-near { border-color:#e0a323; background:#fff8e7; }
+    .event-item.is-past { opacity:.7; }
+    .event-item-head { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+    .event-time { font-weight:800; font-size:1.02rem; color:var(--navy); white-space:nowrap; }
+    .event-tag { font-size:.75rem; font-weight:700; border-radius:999px; padding:3px 8px; background:#e8edf2; color:#334155; }
+    .event-item.is-near .event-tag { background:#ffe3a3; color:#704900; }
+    .event-detail { margin:5px 0 0; font-size:.88rem; line-height:1.5; overflow-wrap:anywhere; }
+    .event-empty { border:1px dashed var(--line); border-radius:10px; padding:14px; color:var(--muted); font-size:.88rem; line-height:1.5; }
     .muted { color: var(--muted); font-size: .85rem; line-height: 1.6; }
     .official-panel, .legend-panel { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #f8fafc; }
     .official-panel p { margin: 0 0 10px; }
@@ -190,7 +205,12 @@
     </nav>
     <section class="section" aria-labelledby="stations-heading">
       <div class="section-head"><div><h2 id="stations-heading">🚉 現在地から3km以内の駅</h2><p class="section-note">GPS取得後に検索。地下鉄を含み、路面電車・ライトレールは除外します。</p></div><button id="station-refresh" type="button">駅を検索</button></div>
-      <div id="station-status" class="station-meta">位置情報を許可すると、周辺の駅を検索できます。</div>
+      <div class="station-meta" id="station-status">位置情報を許可すると、周辺の駅を検索できます。</div>
+      <div class="event-display" aria-live="polite">
+        <h3 style="margin:0;font-size:1rem">📍 登録済みイベント</h3>
+        <p class="muted" style="margin:5px 0 0">現在時刻の前後30分に該当するイベントは目立つ表示になります。</p>
+        <div id="event-list" class="event-list"><div class="event-empty">イベント情報を読み込み中…</div></div>
+      </div>
       <div id="station-list" class="station-list"></div>
     </section>
     <div class="toolbar">
@@ -342,7 +362,7 @@
         <p id="event-status" class="event-status" aria-live="polite">入力内容はこの端末のブラウザに保存されます。</p>
       </div>
 
-      <p class="muted">※各行の先頭の時刻を判定時刻として扱います。時刻の前後30分ちょうども表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了時刻が不明な場合、実際の終演時刻とは一致しないことがあります。</p>
+      <p class="muted">※各行の先頭の時刻をイベント終了予定時刻として扱い、その前後30分以内は駅一覧の上にも強調表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了予定時刻が入力されていない場合、実際の終演時刻とは一致しません。</p>
     </section>
 
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
@@ -481,6 +501,123 @@
       document.getElementById("last-updated").textContent =
         "最終更新操作：" + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     }
+
+    // イベント情報：端末内保存・日付見出しの判定・表示を行います。
+    const EVENT_STORAGE_KEY = 'kobachaTaxiDashboardEventsV1';
+    const eventSource = document.getElementById('event-source');
+    const eventList = document.getElementById('event-list');
+    const eventStatus = document.getElementById('event-status');
+
+    function inferEventDate(month, day, now) {
+      let year = now.getFullYear();
+      let date = new Date(year, month - 1, day);
+      const diffDays = (date - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000;
+      if (diffDays < -180) date = new Date(year + 1, month - 1, day);
+      else if (diffDays > 180) date = new Date(year - 1, month - 1, day);
+      return date;
+    }
+
+    function parseEventText(text) {
+      const lines = text.split(/\r?\n/);
+      const events = [];
+      let currentDate = null;
+      const now = new Date();
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        const dateMatch = line.match(/(?:\[([^\]]+)\]\s*)?(\d{1,2})\s*[\/月.-]\s*(\d{1,2})\s*日?/);
+        if (dateMatch && !/^\d{1,2}:\d{2}/.test(line)) {
+          const month = Number(dateMatch[2]), day = Number(dateMatch[3]);
+          if (month >= 1 && month <= 12 && day >= 1 && day <= 31) currentDate = inferEventDate(month, day, now);
+          continue;
+        }
+        const timeMatch = line.match(/^\s*(\d{1,2}):(\d{2})\s*[｜|｜\-–—:]?\s*(.*)$/);
+        if (!timeMatch) continue;
+        const hour = Number(timeMatch[1]), minute = Number(timeMatch[2]);
+        if (hour > 23 || minute > 59) continue;
+        const date = currentDate ? new Date(currentDate) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        date.setHours(hour, minute, 0, 0);
+        events.push({date, time: `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`, detail: timeMatch[3].trim() || '詳細情報なし'});
+      }
+      return events;
+    }
+
+    function renderStationEventAlerts(events, now = new Date()) {
+      const alertBox = document.getElementById('station-event-alerts');
+      if (!alertBox) return;
+      alertBox.replaceChildren();
+      const active = events.filter(ev => Math.abs((ev.date - now) / 60000) <= 30).sort((a,b)=>a.date-b.date);
+      if (!active.length) {
+        // 既存の駅一覧はそのまま。対象イベントがない時は通知欄だけを空にする。
+        return;
+      }
+      const heading = document.createElement('h3');
+      heading.style.cssText = 'margin:0 0 7px;font-size:1rem';
+      heading.textContent = '⚠️ 終了予定時刻の前後30分以内のイベント';
+      alertBox.appendChild(heading);
+      for (const ev of active) {
+        const item = document.createElement('article');
+        item.className = 'event-item is-near';
+        const head = document.createElement('div'); head.className = 'event-item-head';
+        const time = document.createElement('span'); time.className = 'event-time';
+        time.textContent = `${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time} 終了予定`;
+        const tag = document.createElement('span'); tag.className = 'event-tag'; tag.textContent = '現在地周辺の駅選びの参考';
+        head.append(time, tag);
+        const detail = document.createElement('p'); detail.className = 'event-detail'; detail.textContent = ev.detail;
+        item.append(head, detail); alertBox.appendChild(item);
+      }
+    }
+
+    function renderEvents() {
+      const text = eventSource.value.trim();
+      eventList.replaceChildren();
+      if (!text) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent='イベント情報がまだ登録されていません。下の欄に一覧を貼り付けて「保存して表示」を押してください。';
+        eventList.appendChild(empty);
+        renderStationEventAlerts([], new Date());
+        return;
+      }
+      const events = parseEventText(text).sort((a,b)=>a.date-b.date);
+      if (!events.length) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent='時刻付きのイベントを読み取れませんでした。例のように「15:10 ｜ 会場名・イベント名」の形式で入力してください。';
+        eventList.appendChild(empty);
+        renderStationEventAlerts([], new Date());
+        return;
+      }
+      const now = new Date();
+      for (const ev of events) {
+        const delta = (ev.date - now) / 60000;
+        const near = Math.abs(delta) <= 30;
+        const item = document.createElement('article'); item.className='event-item' + (near?' is-near':'') + (delta < -30?' is-past':'');
+        const head = document.createElement('div'); head.className='event-item-head';
+        const time = document.createElement('span'); time.className='event-time'; time.textContent=`${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time}`;
+        head.appendChild(time);
+        const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent=near?'⏰ 時刻の前後30分':(delta < -30?'時刻経過':'予定'); head.appendChild(tag);
+        const detail = document.createElement('p'); detail.className='event-detail'; detail.textContent=ev.detail;
+        item.append(head,detail); eventList.appendChild(item);
+      }
+      renderStationEventAlerts(events, now);
+    }
+
+    document.getElementById('event-save').addEventListener('click', () => {
+      try { localStorage.setItem(EVENT_STORAGE_KEY, eventSource.value); eventStatus.textContent='保存しました。登録済みイベントを更新しました。'; }
+      catch (e) { eventStatus.textContent='このブラウザでは保存できませんでした。入力内容は画面上で表示します。'; }
+      renderEvents();
+    });
+    document.getElementById('event-clear').addEventListener('click', () => {
+      eventSource.value='';
+      try { localStorage.removeItem(EVENT_STORAGE_KEY); } catch (e) {}
+      eventStatus.textContent='イベント情報を消去しました。';
+      renderEvents();
+    });
+    try {
+      const savedEvents = localStorage.getItem(EVENT_STORAGE_KEY);
+      if (savedEvents) { eventSource.value=savedEvents; eventStatus.textContent='この端末に保存されたイベント情報を読み込みました。'; }
+    } catch (e) { eventStatus.textContent='ブラウザ内保存は利用できません。保存できない場合はページを開いたままご利用ください。'; }
+    renderEvents();
+    setInterval(renderEvents, 60000);
 
     document.getElementById("refresh-all").addEventListener("click", refreshAll);
     document.querySelectorAll("[data-refresh]").forEach((button) => {

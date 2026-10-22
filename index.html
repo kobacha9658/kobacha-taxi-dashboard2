@@ -31,17 +31,19 @@
       background: linear-gradient(135deg, var(--navy), var(--blue));
     }
     .header-inner, main, footer { width: min(1100px, 100%); margin: 0 auto; }
+    .header-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,.85fr); gap:24px; align-items:center; }
+    .header-title { min-width:0; }
     .eyebrow { margin: 0 0 6px; color: #d5e6fa; font-size: .82rem; letter-spacing: .08em; }
     h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); line-height: 1.3; }
     .subtitle { margin: 8px 0 0; color: #e6eef7; font-size: .92rem; }
-    .gps-bar { display:flex; align-items:center; gap:12px; margin-top:16px; padding:12px 14px; border:1px solid rgba(255,255,255,.28); border-radius:14px; background:rgba(255,255,255,.12); color:#fff; }
+    .gps-bar { display:flex; align-items:center; gap:12px; margin-top:0; padding:12px 14px; border:1px solid rgba(255,255,255,.28); border-radius:14px; background:rgba(255,255,255,.12); color:#fff; min-width:0; }
     .gps-pin { font-size:1.45rem; flex:0 0 auto; }
     .gps-copy { min-width:0; flex:1; }
     .gps-label { margin:0 0 3px; color:#d5e6fa; font-size:.78rem; font-weight:700; }
     .gps-address { margin:0; font-size:.95rem; font-weight:700; line-height:1.45; overflow-wrap:anywhere; }
     .gps-status { margin:4px 0 0; color:#e6eef7; font-size:.76rem; line-height:1.4; }
     .gps-button { flex:0 0 auto; background:#fff; color:var(--navy); }
-    @media (max-width:520px) { .gps-bar { align-items:flex-start; flex-wrap:wrap; } .gps-copy { flex-basis:calc(100% - 44px); } .gps-button { margin-left:42px; } }
+    @media (max-width:680px) { .header-layout { grid-template-columns:minmax(0,1fr); gap:16px; } .gps-bar { align-items:flex-start; flex-wrap:wrap; } .gps-copy { flex-basis:calc(100% - 44px); } .gps-button { margin-left:42px; } }
     main { padding: 16px; }
     .toolbar {
       display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
@@ -163,10 +165,12 @@
 <body>
 
   <header>
-    <div class="header-inner">
-      <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
-      <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
-      <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
+    <div class="header-inner header-layout">
+      <div class="header-title">
+        <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
+        <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
+        <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
+      </div>
       <section class="gps-bar" aria-label="現在地情報" role="region">
         <div class="gps-pin" aria-hidden="true">📍</div>
         <div class="gps-copy">
@@ -403,20 +407,13 @@
     }
     gpsStart.addEventListener('click', startGps);
 
-    // アプリ起動をユーザー操作直後に試し、起動できない場合のみ公式App Storeページへ案内。
+    // まずアプリのURLスキームで起動を試します。App Storeへ自動転送すると
+    // 起動できるアプリでもストアに飛んだように見えるため、自動転送はしません。
+    // JR東日本が公開しているスキームを確認できていないため、jreastapp://は起動試行です。
     const jrAppButton = document.getElementById('jr-app-open');
     jrAppButton.addEventListener('click', event => {
       event.preventDefault();
-      let leftPage = false;
-      const markLeft = () => { leftPage = true; };
-      window.addEventListener('pagehide', markLeft, {once:true});
-      document.addEventListener('visibilitychange', () => { if (document.hidden) leftPage = true; }, {once:true});
       window.location.href = 'jreastapp://';
-      window.setTimeout(() => {
-        if (!leftPage && !document.hidden) {
-          window.location.href = 'https://apps.apple.com/jp/app/jr%E6%9D%B1%E6%97%A5%E6%9C%AC%E3%82%A2%E3%83%97%E3%83%AA-%E5%85%AC%E5%BC%8F-%E9%81%8B%E8%A1%8C%E6%83%85%E5%A0%B1-%E4%B9%97%E6%8F%9B%E6%A1%88%E5%86%85-%E6%96%B0%E5%B9%B9%E7%B7%9A-%E3%83%81%E3%82%B1%E3%83%83%E3%83%88/id820004378';
-        }
-      }, 1800);
     });
 
     const cameras = {

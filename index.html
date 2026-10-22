@@ -186,7 +186,7 @@
   <main>
     <nav class="quick-links" aria-label="外部アプリ">
       <a class="link-button" href="discord://" onclick="setTimeout(()=>{if(!document.hidden)location.href='https://discord.com/app'},700)" rel="noopener">💬 Discordを開く</a>
-      <a class="link-button" id="jr-app-open" href="jreastapp://">🚃 JR東日本アプリ【公式】を開く</a>
+      <a class="link-button" id="jr-app-open" href="https://jreast-app.onelink.me/AUmo?c=jreappstart&pid=jreast-app&af_ios_url=https%3A%2F%2Fitunes.apple.com%2Fjp%2Fapp%2Fapple-store%2Fid820004378%3Fpt%3D641888%26ct%3Dekinet%26mt%3D8" rel="noopener">🚃 JR東日本アプリ【公式】を開く</a>
     </nav>
     <section class="section" aria-labelledby="stations-heading">
       <div class="section-head"><div><h2 id="stations-heading">🚉 現在地から3km以内の駅</h2><p class="section-note">GPS取得後に検索。地下鉄を含み、路面電車・ライトレールは除外します。</p></div><button id="station-refresh" type="button">駅を検索</button></div>
@@ -407,14 +407,8 @@
     }
     gpsStart.addEventListener('click', startGps);
 
-    // まずアプリのURLスキームで起動を試します。App Storeへ自動転送すると
-    // 起動できるアプリでもストアに飛んだように見えるため、自動転送はしません。
-    // JR東日本が公開しているスキームを確認できていないため、jreastapp://は起動試行です。
-    const jrAppButton = document.getElementById('jr-app-open');
-    jrAppButton.addEventListener('click', event => {
-      event.preventDefault();
-      window.location.href = 'jreastapp://';
-    });
+    // JR東日本アプリへの公式誘導リンク（iPhoneでアプリが起動することをユーザー確認済み）。
+    // 通常のリンク遷移を利用し、アプリ／App Storeへの振り分けはリンク側に任せます。
 
     const cameras = {
       yaesu1: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg",

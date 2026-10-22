@@ -132,6 +132,15 @@
     #event-source { display:block; width:100%; min-height:150px; margin-top:8px; padding:10px; border:1px solid var(--line); border-radius:10px; font:inherit; font-size:.9rem; resize:vertical; }
     .event-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
     .event-status { margin:10px 0 0; color:var(--muted); font-size:.82rem; line-height:1.5; }
+    .image-ocr-area { margin-top:12px; }
+    .event-image-drop { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; min-height:112px; margin-top:10px; padding:14px; border:2px dashed var(--line); border-radius:12px; background:#fff; text-align:center; cursor:pointer; }
+    .event-image-drop:focus { outline:3px solid #93c5fd; outline-offset:2px; }
+    .event-image-drop small { color:var(--muted); }
+    .event-image-drop input { display:block; max-width:100%; margin-top:4px; }
+    #event-image-preview { display:block; max-width:100%; max-height:320px; object-fit:contain; margin:12px auto 0; border-radius:10px; }
+    #event-image-preview[hidden] { display:none; }
+    #event-image-text { margin-top:8px; min-height:130px; }
+
     .event-display { margin:0 0 14px; }
     .event-list { display:grid; gap:8px; margin-top:10px; }
     .event-item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; }
@@ -363,6 +372,27 @@
           <button id="event-clear" class="secondary" type="button">入力を消去</button>
         </div>
         <p id="event-status" class="event-status" aria-live="polite">入力内容はこの端末のブラウザに保存されます。</p>
+      </div>
+
+      <div class="event-input-area image-ocr-area" id="event-image-ocr">
+        <strong>🖼️ イベント画像を貼り付けて読み込む</strong>
+        <p class="muted">画像を下の枠に貼り付けるか、iPhoneから画像を選択してください。画像はこのブラウザ内でOCR処理し、内容を確認してからイベント情報欄へ反映します。</p>
+        <div id="event-image-drop" class="event-image-drop" tabindex="0" role="button" aria-label="イベント画像を貼り付ける領域">
+          <span>📋 ここをタップしてから画像をペースト</span>
+          <small>または下のボタンで画像を選択</small>
+          <input id="event-image-file" type="file" accept="image/*" capture="environment" aria-label="イベント画像を選択" />
+        </div>
+        <img id="event-image-preview" alt="読み込み対象のイベント画像プレビュー" hidden />
+        <div class="event-actions">
+          <button id="event-image-analyze" type="button" disabled>画像を解析</button>
+          <button id="event-image-clear" type="button" class="secondary">画像を消去</button>
+        </div>
+        <p id="event-image-status" class="event-status" aria-live="polite">画像を貼り付けるか選択してください。初回は日本語OCRデータの読み込みに通信が必要です。</p>
+        <label for="event-image-text"><strong>OCR読み取り結果（確認・編集用）</strong></label>
+        <textarea id="event-image-text" placeholder="画像を解析すると読み取った文字がここに表示されます。" rows="6"></textarea>
+        <div class="event-actions">
+          <button id="event-image-apply" type="button" disabled>読み取り結果をイベント情報欄に反映</button>
+        </div>
       </div>
 
       <p class="muted">※各行の先頭の時刻をイベント終了予定時刻として扱い、その前後30分以内は駅一覧の上にも強調表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了予定時刻が入力されていない場合、実際の終演時刻とは一致しません。</p>
@@ -628,6 +658,96 @@
       }
       renderStationEventAlerts(events, now);
     }
+
+    // 画像OCRはブラウザ内で実行。画像データを外部APIへ送信しません。
+    const eventImageDrop = document.getElementById('event-image-drop');
+    const eventImageFile = document.getElementById('event-image-file');
+    const eventImagePreview = document.getElementById('event-image-preview');
+    const eventImageAnalyze = document.getElementById('event-image-analyze');
+    const eventImageClear = document.getElementById('event-image-clear');
+    const eventImageStatus = document.getElementById('event-image-status');
+    const eventImageText = document.getElementById('event-image-text');
+    const eventImageApply = document.getElementById('event-image-apply');
+    let eventImageBlob = null;
+    let tesseractLoadPromise = null;
+    function setEventImage(blob) {
+      if (!blob || !blob.type || !blob.type.startsWith('image/')) {
+        eventImageStatus.textContent = '画像ファイルを選択してください。';
+        return;
+      }
+      eventImageBlob = blob;
+      eventImagePreview.src = URL.createObjectURL(blob);
+      eventImagePreview.hidden = false;
+      eventImageAnalyze.disabled = false;
+      eventImageStatus.textContent = '画像を読み込みました。［画像を解析］を押してください。';
+    }
+    eventImageFile.addEventListener('change', () => {
+      const file = eventImageFile.files && eventImageFile.files[0];
+      if (file) setEventImage(file);
+    });
+    eventImageDrop.addEventListener('click', (e) => {
+      if (e.target !== eventImageFile) eventImageDrop.focus();
+    });
+    eventImageDrop.addEventListener('paste', (e) => {
+      const items = Array.from(e.clipboardData?.items || []);
+      const item = items.find(x => x.type && x.type.startsWith('image/'));
+      if (item) { e.preventDefault(); setEventImage(item.getAsFile()); }
+      else eventImageStatus.textContent = 'クリップボードに画像がありません。画像をコピーしてから貼り付けてください。';
+    });
+    document.addEventListener('paste', (e) => {
+      const target = e.target;
+      if (target && (target.closest('#event-image-ocr') || target.matches('textarea,input'))) return;
+      const items = Array.from(e.clipboardData?.items || []);
+      const item = items.find(x => x.type && x.type.startsWith('image/'));
+      if (item) { setEventImage(item.getAsFile()); eventImageStatus.textContent = '画像を貼り付けました。［画像を解析］を押してください。'; }
+    });
+    async function loadTesseract() {
+      if (window.Tesseract) return window.Tesseract;
+      if (!tesseractLoadPromise) tesseractLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        script.onload = () => window.Tesseract ? resolve(window.Tesseract) : reject(new Error('OCRエンジンを読み込めませんでした。'));
+        script.onerror = () => reject(new Error('OCRエンジンを読み込めませんでした。通信状況を確認してください。'));
+        document.head.appendChild(script);
+      });
+      return tesseractLoadPromise;
+    }
+    eventImageAnalyze.addEventListener('click', async () => {
+      if (!eventImageBlob) return;
+      eventImageAnalyze.disabled = true;
+      eventImageStatus.textContent = '日本語OCRを準備しています…初回は少し時間がかかります。';
+      try {
+        const Tesseract = await loadTesseract();
+        const result = await Tesseract.recognize(eventImageBlob, 'jpn+eng', {
+          logger: m => { if (m.status === 'recognizing text') eventImageStatus.textContent = `画像を解析中… ${Math.round((m.progress || 0) * 100)}%`; }
+        });
+        const extracted = (result.data && result.data.text || '').trim();
+        eventImageText.value = extracted;
+        eventImageApply.disabled = !extracted;
+        eventImageStatus.textContent = extracted ? '解析が完了しました。読み取り結果を確認し、必要に応じて修正してから反映してください。画像はブラウザ内で処理しました。' : '文字を読み取れませんでした。画像を拡大するか、別の画像をお試しください。';
+      } catch (err) {
+        eventImageStatus.textContent = `解析できませんでした：${err.message || '通信状況を確認してください。'}`;
+      } finally { eventImageAnalyze.disabled = !eventImageBlob; }
+    });
+    eventImageText.addEventListener('input', () => { eventImageApply.disabled = !eventImageText.value.trim(); });
+    eventImageApply.addEventListener('click', () => {
+      const extracted = eventImageText.value.trim();
+      if (!extracted) return;
+      const existing = eventSource.value.trim();
+      eventSource.value = existing ? `${existing}\n\n${extracted}` : extracted;
+      eventStatus.textContent = 'OCR結果をイベント情報欄に追加しました。内容を確認して「保存して表示」を押してください。';
+      eventSource.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    eventImageClear.addEventListener('click', () => {
+      eventImageBlob = null;
+      eventImagePreview.removeAttribute('src');
+      eventImagePreview.hidden = true;
+      eventImageFile.value = '';
+      eventImageText.value = '';
+      eventImageAnalyze.disabled = true;
+      eventImageApply.disabled = true;
+      eventImageStatus.textContent = '画像を貼り付けるか選択してください。';
+    });
 
     document.getElementById('event-save').addEventListener('click', () => {
       try { localStorage.setItem(EVENT_STORAGE_KEY, eventSource.value); eventStatus.textContent='保存しました。登録済みイベントを更新しました。'; }

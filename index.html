@@ -31,31 +31,6 @@
       background: linear-gradient(135deg, var(--navy), var(--blue));
     }
     .header-inner, main, footer { width: min(1100px, 100%); margin: 0 auto; }
-    .header-inner { display:flex; align-items:center; justify-content:space-between; gap:18px; }
-    .header-title { min-width:0; }
-    .gps-compact { display:flex; align-items:center; gap:8px; flex:0 0 auto; max-width:42%; padding:9px 11px; border:1px solid rgba(255,255,255,.25); border-radius:12px; background:rgba(255,255,255,.09); color:inherit; font:inherit; text-align:inherit; cursor:pointer; transition:background .15s ease; }
-    .gps-compact:hover { background:rgba(255,255,255,.16); }
-    .gps-compact:focus-visible { outline:2px solid #fff; outline-offset:3px; }
-    .gps-compact-copy { min-width:0; text-align:right; }
-    .gps-label { margin:0 0 2px; color:#d5e6fa; font-size:.72rem; }
-    .gps-address { margin:0; color:#fff; font-size:.9rem; font-weight:750; line-height:1.35; white-space:pre-line; overflow-wrap:anywhere; }
-    .gps-status { margin:2px 0 0; color:#d5e6fa; font-size:.72rem; }
-    .gps-button { padding:7px 9px; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.13); color:#fff; font-size:.75rem; white-space:nowrap; }
-    .gps-button:disabled { opacity:.8; cursor:default; }
-    @media(max-width:600px) {
-      header { padding:15px 12px; }
-      .header-inner { align-items:flex-start; gap:9px; }
-      .gps-compact { max-width:48%; padding:7px; gap:5px; }
-      .gps-button { white-space:normal; max-width:76px; font-size:.68rem; padding:6px; }
-      .gps-address { font-size:.78rem; }
-      .gps-label,.gps-status { font-size:.65rem; }
-      .subtitle { font-size:.78rem; }
-    }
-    @media(max-width:390px) {
-      .header-inner { flex-direction:column; }
-      .gps-compact { align-self:stretch; max-width:none; justify-content:space-between; }
-      .gps-compact-copy { text-align:left; }
-    }
     .eyebrow { margin: 0 0 6px; color: #d5e6fa; font-size: .82rem; letter-spacing: .08em; }
     h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); line-height: 1.3; }
     .subtitle { margin: 8px 0 0; color: #e6eef7; font-size: .92rem; }
@@ -166,71 +141,47 @@
     @media(max-width:600px){.map-preview-card{align-items:flex-start;flex-wrap:wrap}.map-preview-card .link-button{width:100%;text-align:center}}
 
 
-
-    .nearby-stations{margin:16px 0 20px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--text)}
-    .nearby-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .nearby-head h2{margin:0;font-size:1.08rem}
-    .nearby-meta{font-size:.82rem;color:var(--muted)}
+    .quick-links{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+    .gps-address{white-space:normal;line-height:1.45}
     .station-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
-    .station-item{padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;display:flex;justify-content:space-between;gap:10px;align-items:center}
-    .station-name{font-weight:750}.station-distance{font-size:.8rem;color:var(--muted);white-space:nowrap}
-    .station-note{margin:10px 0 0;font-size:.8rem;line-height:1.5;color:var(--muted)}
-    .station-retry{border:0;border-radius:8px;padding:8px 11px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}
-
-    .event-input-area{margin:14px 0 18px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff}
-    .event-input-area textarea{display:block;width:100%;min-height:240px;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font: .88rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;background:#fbfdff;color:var(--text)}
-    .event-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .event-actions button{border:0;border-radius:8px;padding:10px 13px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}
-    .event-actions button.secondary{background:#e8eef5;color:#203348}
-    .event-status{font-size:.82rem;color:var(--muted);margin:8px 0 0;line-height:1.5}
-    .event-list{display:grid;gap:9px;margin-top:12px}
-    .event-card{padding:12px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;background:#fff}
-    .event-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .event-card time{font-weight:800;color:var(--blue);white-space:nowrap}
-    .event-card h3{font-size:1rem;margin:3px 0 5px}
-    .event-card p{font-size:.86rem;line-height:1.5;margin:3px 0;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
-    .event-count{font-size:.82rem;color:var(--muted)}
-    .event-empty{padding:14px;border:1px dashed #b8c5d3;border-radius:10px;color:var(--muted);font-size:.88rem;line-height:1.6;background:#f8fafc}
-    @media(max-width:600px){.event-input-area{padding:10px}.event-input-area textarea{min-height:210px}}
+    .station-item{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+    .station-item strong{display:block}.station-item small{color:var(--muted)}
+    .delay-alert{display:none;margin-top:12px;padding:12px;border:1px solid #f3b6b6;background:#fff5f5;border-radius:12px}
+    .delay-alert.visible{display:block}.delay-alert strong{color:#b42318}
+    .station-meta{color:var(--muted);font-size:.8rem;line-height:1.5}
 
 </style>
 </head>
 <body>
+
   <header>
     <div class="header-inner">
-      <div class="header-title">
-        <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
-        <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
-        <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
-      </div>
-      <section class="gps-compact" id="gps-start" role="button" tabindex="0" aria-label="タップして現在地を取得">
-        <div class="gps-compact-copy">
-          <p class="gps-label">📍 現在地</p>
-          <p class="gps-address" id="gps-address">タップして取得</p>
-          <p class="gps-status" id="gps-status" aria-live="polite">取得時刻 --:--:--</p>
-        </div>
-      </section>
+      <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
+      <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
+      <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
     </div>
   </header>
 
-
-    <section class="section" aria-label="外部アプリ">
-      <div class="section-head"><div><h2>📲 外部アプリ</h2><p class="section-note">タップして情報を確認</p></div></div>
-      <div class="actions">
-        <a class="link-button" href="discord://-/channels/@me" onclick="setTimeout(()=>{if(!document.hidden)window.location.href='https://discord.com/app'},700)" rel="noopener noreferrer">Discordを開く ↗</a>
-        <a class="link-button" href="https://apps.apple.com/jp/app/jr東日本アプリ/id985521074" target="_blank" rel="noopener noreferrer">JR東日本アプリ ↗</a>
-      </div>
-      <p class="station-note">※ Discordはアプリ起動を試し、開けない場合はWeb版へ移動します。JR東日本アプリはApp Storeの案内を開きます。</p>
-    </section>
-
-    <section class="nearby-stations" aria-labelledby="nearby-title">
-      <div class="nearby-head"><h2 id="nearby-title">🚉 GPS周辺の駅（半径3km）</h2><button class="station-retry" id="station-retry" type="button">駅を再検索</button></div>
-      <div class="nearby-meta" id="station-status" aria-live="polite">現在地を取得すると周辺の駅を表示します。</div>
-      <div class="station-list" id="station-list"><div class="event-empty">GPSを取得すると、現在地から3km以内の駅を検索します。</div></div>
-      <p class="station-note">※ OpenStreetMapの駅データを使用。路面電車・トラム系（例：東急世田谷線）は除外するようにしています。駅の登録状況や路線タグにより、表示漏れ・誤判定が起きる場合があります。終電時刻はまだ表示しません。</p>
-    </section>
+  <section class="gps-bar" aria-label="現在地" role="region">
+    <div class="gps-pin" aria-hidden="true">📍</div>
+    <div class="gps-copy">
+      <p class="gps-label">GPS現在地</p>
+      <p class="gps-address" id="gps-address">位置情報の許可が必要です</p>
+      <p class="gps-status" id="gps-status" aria-live="polite">許可すると移動に合わせて住所を更新します</p>
+    </div>
+    <button class="gps-button" id="gps-start" type="button">位置情報を許可</button>
+  </section>
 
   <main>
+    <nav class="quick-links" aria-label="外部アプリ">
+      <a class="link-button" href="discord://" onclick="setTimeout(()=>{if(!document.hidden)location.href='https://discord.com/app'},700)" rel="noopener">💬 Discordを開く</a>
+      <a class="link-button" href="jreastapp://" onclick="setTimeout(()=>{if(!document.hidden)location.href='https://apps.apple.com/jp/app/id820004378'},900)" rel="noopener">🚃 JR東日本アプリ【公式】運行情報・乗換案内・新幹線〜</a>
+    </nav>
+    <section class="section" aria-labelledby="stations-heading">
+      <div class="section-head"><div><h2 id="stations-heading">🚉 現在地から3km以内の駅</h2><p class="section-note">GPS取得後に検索。地下鉄を含み、路面電車・ライトレールは除外します。</p></div><button id="station-refresh" type="button">駅を検索</button></div>
+      <div id="station-status" class="station-meta">位置情報を許可すると、周辺の駅を検索できます。</div>
+      <div id="station-list" class="station-list"></div>
+    </section>
     <div class="toolbar">
       <div>
         <strong>カメラ一覧</strong>
@@ -241,14 +192,6 @@
         <a class="link-button" href="https://www.tokyo-tc.or.jp/driver/stand/livecamera/" target="_blank" rel="noopener noreferrer">公式カメラ案内 ↗</a>
       </div>
     </div>
-
-    <section class="section" aria-labelledby="event-heading">
-      <h2 id="event-heading">📅 現在時刻付近のイベント</h2>
-      <p class="muted">入力された時刻の前後30分以内に該当するイベントを表示します。</p>
-      <div class="event-card-top"><strong>現在表示対象のイベント</strong><span id="event-now" class="event-count"></span></div>
-      <div id="event-results" class="event-list"><div class="event-empty">イベント一覧を入力して「保存して表示」を押してください。</div></div>
-      <p class="muted">※各行の先頭の時刻を判定時刻として扱います。時刻の前後30分ちょうども表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了時刻が不明な場合、実際の終演時刻とは一致しないことがあります。</p>
-    </section>
 
     <section class="section" aria-labelledby="yaesu-heading">
       <div class="section-head">
@@ -298,6 +241,12 @@
           <div class="camera-foot"><span class="image-status" data-status="haneda2">準備中</span><button type="button" data-refresh="haneda2">更新</button></div>
         </article>
       </div>
+      <div id="haneda-delay-alert" class="delay-alert" aria-live="polite">
+        <strong>⚠️ 羽田TPシステムのお知らせ</strong>
+        <p id="haneda-delay-text" style="margin:6px 0 10px"></p>
+        <a class="link-button" href="https://ttc.taxi-inf.jp/index.php" target="_blank" rel="noopener noreferrer">第1待機所の状況を公式ページで確認 ↗</a>
+      </div>
+      <div class="info-panel"><div><strong>第1待機所・遅れ便情報</strong><p>公式TPシステムのお知らせ欄を確認します。自動取得が制限される場合は公式ページから確認してください。</p></div><a class="link-button" href="https://ttc.taxi-inf.jp/index.php" target="_blank" rel="noopener noreferrer">TPシステムを開く ↗</a></div>
     </section>
 
     <section class="section" aria-labelledby="flight-heading">
@@ -324,18 +273,6 @@
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
-            <strong>🗺️ NAVITIME 高速道路渋滞マップ</strong>
-            <p class="muted">関東の高速道路の渋滞・規制情報を確認できます。枠内で表示できない場合は、公式ページを直接開いてください。</p>
-          </div>
-          <a class="link-button" href="https://trafficmap.navitime.co.jp/highway/kanto" target="_blank" rel="noopener noreferrer">NAVITIMEで直接開く ↗</a>
-        </div>
-        <iframe title="NAVITIME 関東高速道路渋滞マップ" src="https://trafficmap.navitime.co.jp/highway/kanto" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:420px;border:1px solid var(--border,#d5dce3);border-radius:10px;margin-top:12px;background:#fff"></iframe>
-        <p class="muted">※NAVITIME側の埋め込み制限により枠内が表示されない場合があります。その際は「NAVITIMEで直接開く」を使用してください。</p>
-      </div>
-
-      <div class="traffic-feature">
-        <div class="traffic-feature-head">
-          <div>
             <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
             <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
           </div>
@@ -351,6 +288,15 @@
         </div>
         <p class="muted">※公式サイトはフレーム内表示を認めていないため、ダッシュボード内への直接埋め込みではなく、公式マップを別画面で開く方式にしています。</p>
       </div>
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
+            <strong>🛣️ NEXCO東日本「ドラとら」</strong>
+            <p class="muted">東京外環道・関越道・東北道など、首都高以外の高速道路交通情報はこちら。</p>
+          </div>
+          <a class="link-button" href="https://www.drivetraffic.jp/" target="_blank" rel="noopener noreferrer">ドラとらを開く ↗</a>
+        </div>
+      </div>
       <div class="legend-panel">
         <strong>🚗 交通状況の色の目安</strong>
         <p class="muted">凡例は一般的な目安です。実際の色・事故・通行止めなどは、必ず公式マップの表示を確認してください。</p>
@@ -365,33 +311,10 @@
       <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図へのリンクから最新情報を確認してください。</p>
     </section>
 
-    <section class="section" aria-labelledby="event-input-heading">
-      <h2 id="event-input-heading">📝 イベント情報の入力・編集</h2>
-      <p class="muted">イベント一覧をまとめて貼り付けて保存。入力内容はこの端末のブラウザに保存されます。</p>
-      <div class="event-input-area">
-        <label for="event-source"><strong>イベント情報（まとめて貼り付け）</strong></label>
-        <textarea id="event-source" placeholder="例：
-[明日] 10/21 水
-[時刻表（終演順）]
-15:10 ｜ 明治座 (公演 ¥7000) ｜ 出演者
-17:00 ｜ 国際フォーラム (コンサート ¥8800)"></textarea>
-        <div class="event-actions">
-          <button id="event-save" type="button">保存して表示</button>
-          <button id="event-clear" class="secondary" type="button">入力を消去</button>
-        </div>
-        <p id="event-status" class="event-status" aria-live="polite">入力内容はこの端末のブラウザに保存されます。</p>
-      </div>
-
-      <p class="muted">※各行の先頭の時刻を判定時刻として扱います。時刻の前後30分ちょうども表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了時刻が不明な場合、実際の終演時刻とは一致しないことがあります。</p>
-    </section>
-
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
-
-
-
   </main>
 
-  <footer>こばちゃ専用ダッシュボード · イベント情報／羽田空港国内線／高速道路交通情報</footer>
+  <footer>こばちゃ専用ダッシュボード · 羽田空港国内線／高速道路交通情報</footer>
 
   <script>
 
@@ -401,8 +324,6 @@
     let lastGeocodeAt = 0;
     let lastGeocodeCoords = null;
     let geocodeBusy = false;
-    let lastStationSearch = null;
-    let stationSearchBusy = false;
     const gpsAddress = document.getElementById('gps-address');
     const gpsStatus = document.getElementById('gps-status');
     const gpsStart = document.getElementById('gps-start');
@@ -417,14 +338,13 @@
     async function updateAddress(lat, lon, accuracy) {
       const now = Date.now();
       const point = {lat, lon};
-      findNearbyStations(lat, lon, false);
       const moved = !lastGeocodeCoords || distanceMeters(lastGeocodeCoords, point) >= 250;
       // 初回は即時、その後は2分以上経過かつ250m以上移動したときだけ住所APIを呼びます。
       if (geocodeBusy || (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 120000))) return;
       geocodeBusy = true;
       lastGeocodeAt = now;
       lastGeocodeCoords = point;
-      gpsStatus.textContent = '地名を確認中…';
+      gpsStatus.textContent = `位置を取得しました（誤差 約${Math.round(accuracy)}m）。住所を確認中…`;
       try {
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=ja`;
         const response = await fetch(url, {headers:{'Accept':'application/json'}});
@@ -432,20 +352,20 @@
         const data = await response.json();
         const a = data.address || {};
         const prefecture = a.province || a.state || a.prefecture || '';
-        const city = a.city || a.municipality || a.town || a.village || '';
-        // さいたま市・横浜市・川崎市などの政令指定都市は、区名も1行目に含めます。
-        // 町名・大字などは2行目に表示し、番地や道路名は表示しません。
-        const wardCandidate = a.city_district || a.suburb || '';
-        const isDesignatedCity = /市$/.test(city) && /さいたま市|横浜市|川崎市|相模原市|千葉市|新潟市|静岡市|浜松市|名古屋市|京都市|大阪市|堺市|神戸市|岡山市|広島市|北九州市|福岡市|熊本市/.test(city);
-        const ward = isDesignatedCity && wardCandidate && wardCandidate !== city ? wardCandidate : '';
-        const line1 = [prefecture, city, ward].filter((v,i,arr) => v && arr.indexOf(v) === i).join('');
-        const line2 = [a.quarter, a.neighbourhood, a.hamlet, (!isDesignatedCity ? wardCandidate : ''), a.residential].find(v => v && v !== city && v !== ward) || '';
-        gpsAddress.textContent = [line1, line2].filter(Boolean).join('\n') || a.county || '地名を特定できません';
-        gpsStatus.textContent = `取得時刻 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}`;
-        gpsStart.setAttribute('aria-label', '現在地を取得中。タップして再取得');
+        const city = a.city || a.town || a.village || a.municipality || '';
+        const ward = a.city_district || a.county || '';
+        const neighbourhood = a.neighbourhood || a.suburb || a.quarter || a.city_district || '';
+        const street = [a.road, a.house_number].filter(Boolean).join('');
+        const top = [prefecture, city, ward].filter((v,i,arr) => v && arr.indexOf(v) === i).join('');
+        gpsAddress.replaceChildren();
+        const line1 = document.createElement('span'); line1.textContent = top || data.display_name || '住所を特定できません';
+        gpsAddress.appendChild(line1);
+        if (neighbourhood && neighbourhood !== ward) { const line2 = document.createElement('span'); line2.style.display='block'; line2.textContent=neighbourhood + (street ? street : ''); gpsAddress.appendChild(line2); }
+        else if (street) { const line2 = document.createElement('span'); line2.style.display='block'; line2.textContent=street; gpsAddress.appendChild(line2); }
+        gpsStatus.textContent = `最終取得 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
       } catch (e) {
         gpsAddress.textContent = '住所を取得できませんでした';
-        gpsStatus.textContent = `取得時刻 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})} · 地名取得失敗`;
+        gpsStatus.textContent = 'GPS位置は取得済みです。通信状況を確認してください。';
         lastGeocodeCoords = null;
       } finally { geocodeBusy = false; }
     }
@@ -458,98 +378,23 @@
       }
       if (gpsWatchId !== null) return;
       gpsAddress.textContent = '現在地を取得中…';
-      gpsStatus.textContent = '取得時刻 --:--:--';
-      gpsStart.setAttribute('aria-label', '現在地を取得中');
+      gpsStatus.textContent = 'ブラウザの位置情報許可を確認してください';
+      gpsStart.textContent = '位置情報を監視中';
+      gpsStart.disabled = true;
       gpsWatchId = navigator.geolocation.watchPosition(
         pos => updateAddress(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
         err => {
           const messages = {1:'位置情報が拒否されました。ブラウザ設定で許可してください。',2:'現在地を取得できません。GPSや通信状況を確認してください。',3:'位置情報の取得がタイムアウトしました。'};
           gpsAddress.textContent = '現在地を取得できません';
-          gpsStatus.textContent = '時刻 --:--';
-          gpsStart.setAttribute('aria-label', 'タップして現在地をもう一度取得');
+          gpsStatus.textContent = messages[err.code] || '位置情報を取得できません';
+          gpsStart.textContent = 'もう一度試す';
+          gpsStart.disabled = false;
           gpsWatchId = null;
         },
         {enableHighAccuracy:true, maximumAge:15000, timeout:20000}
       );
     }
-    function requestGpsAgain() {
-      if (gpsWatchId !== null) {
-        // 取得済みでもタップで明示的に再取得できるように監視を再開始します。
-        navigator.geolocation.clearWatch(gpsWatchId);
-        gpsWatchId = null;
-        lastGeocodeCoords = null;
-      }
-      startGps();
-    }
-    gpsStart.addEventListener('click', requestGpsAgain);
-    gpsStart.addEventListener('keydown', event => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); requestGpsAgain(); }
-    });
-
-
-    const stationStatus = document.getElementById('station-status');
-    const stationList = document.getElementById('station-list');
-    function stationDistance(lat1, lon1, lat2, lon2) {
-      const rad = n => n * Math.PI / 180;
-      const dLat = rad(lat2-lat1), dLon = rad(lon2-lon1);
-      const h = Math.sin(dLat/2)**2 + Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLon/2)**2;
-      return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
-    }
-    async function findNearbyStations(lat, lon, force) {
-      const here = {lat, lon};
-      if (stationSearchBusy) return;
-      if (!force && lastStationSearch && stationDistance(lat,lon,lastStationSearch.lat,lastStationSearch.lon) < 500) return;
-      stationSearchBusy = true; lastStationSearch = here;
-      stationStatus.textContent = '半径3km以内の駅を検索中…';
-      stationList.replaceChildren();
-      try {
-        const query = `[out:json][timeout:25];(node(around:3000,${lat},${lon})[railway=station];way(around:3000,${lat},${lon})[railway=station];relation(around:3000,${lat},${lon})[railway=station];node(around:3000,${lat},${lon})[public_transport=station];way(around:3000,${lat},${lon})[public_transport=station];relation(around:3000,${lat},${lon})[public_transport=station];);out center tags;`;
-        const response = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query));
-        if (!response.ok) throw new Error('駅データ取得エラー');
-        const data = await response.json();
-        const found = new Map();
-        for (const el of (data.elements || [])) {
-          const tags = el.tags || {};
-          const name = tags['name:ja'] || tags.name;
-          if (!name) continue;
-          const railway = tags.railway || '';
-          const mode = [tags.station, tags.railway, tags.route, tags.network, tags.operator, tags.name, tags['name:ja'], tags.subway, tags.light_rail].join(' ').toLowerCase();
-          // 路面電車・トラム系を除外。世田谷線の駅名や運行形態がタグに出るケースも弾く。
-          if (['tram','light_rail','streetcar'].includes(railway) || /世田谷線|tram|streetcar|路面電車/.test(mode)) continue;
-          const elLat = el.lat ?? el.center?.lat, elLon = el.lon ?? el.center?.lon;
-          if (typeof elLat !== 'number' || typeof elLon !== 'number') continue;
-          const dist = stationDistance(lat,lon,elLat,elLon);
-          if (dist > 3000) continue;
-          const lineInfo = [tags['line'], tags.network, tags.operator].filter(Boolean).join(' · ');
-          // 同じ駅名の鉄道事業者別・路線別オブジェクトは、近接していれば同一駅にまとめる。離れた同名駅（例：浅草駅）は別々に残す。
-          const existingKey = [...found.keys()].find(k => { const v=found.get(k); return v.name===name && stationDistance(v.lat,v.lon,elLat,elLon)<=250; });
-          if (existingKey) { const prior=found.get(existingKey); if (lineInfo && !prior.lines.includes(lineInfo)) prior.lines.push(lineInfo); if (dist<prior.dist) {prior.dist=dist;prior.lat=elLat;prior.lon=elLon;} }
-          else { const key=name+':'+Math.round(elLat*10000)+':'+Math.round(elLon*10000); found.set(key,{name,dist,lat:elLat,lon:elLon,railway,lines:lineInfo?[lineInfo]:[]}); }
-        }
-        const stations = [...found.values()].sort((a,b)=>a.dist-b.dist);
-        if (!stations.length) {
-          stationList.innerHTML = '<div class="event-empty">3km圏内の駅が見つかりませんでした。GPS位置や駅データを確認してください。</div>';
-        } else {
-          for (const station of stations) {
-            const item = document.createElement('div'); item.className='station-item';
-            const copy = document.createElement('div'); copy.style.minWidth='0';
-            const name = document.createElement('div'); name.className='station-name'; name.textContent=station.name; copy.append(name);
-            if (station.lines.length) { const lines=document.createElement('div'); lines.className='station-distance'; lines.style.whiteSpace='normal'; lines.textContent=[...new Set(station.lines)].join(' / '); copy.append(lines); }
-            const distance = document.createElement('span'); distance.className='station-distance'; distance.textContent=station.dist < 1000 ? `${Math.round(station.dist/10)*10} m` : `${(station.dist/1000).toFixed(1)} km`;
-            item.append(copy,distance); stationList.append(item);
-          }
-        }
-        stationStatus.textContent = `半径3km以内：${stations.length}駅（地下鉄を含む） · 更新 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})}`;
-      } catch (e) {
-        stationList.innerHTML = '<div class="event-empty">駅データを取得できませんでした。通信状況を確認して「駅を再検索」を押してください。</div>';
-        stationStatus.textContent = '駅検索に失敗しました';
-      } finally { stationSearchBusy = false; }
-    }
-    document.getElementById('station-retry').addEventListener('click', () => {
-      if (!navigator.geolocation) { stationStatus.textContent='このブラウザは位置情報に対応していません'; return; }
-      stationStatus.textContent='現在地を確認中…';
-      navigator.geolocation.getCurrentPosition(pos => findNearbyStations(pos.coords.latitude,pos.coords.longitude,true), () => {stationStatus.textContent='GPSを取得できません。上部の現在地をタップしてください。';}, {enableHighAccuracy:true,maximumAge:10000,timeout:15000});
-    });
+    gpsStart.addEventListener('click', startGps);
 
     const cameras = {
       yaesu1: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg",
@@ -616,99 +461,50 @@
       });
     });
 
-
-    // イベント一覧を解析し、時刻の前後30分以内に該当するものだけ表示します。
-    const eventSource = document.getElementById('event-source');
-    const eventResults = document.getElementById('event-results');
-    const eventStatus = document.getElementById('event-status');
-    const eventNow = document.getElementById('event-now');
-    const EVENT_STORAGE_KEY = 'kobachaTaxiDashboardEventsV1';
-    const EVENT_WINDOW_MINUTES = 30;
-
-    function getEventDateFromText(text, now) {
-      // 見出しの M/D を優先。なければ当日扱い。
-      const match = text.match(/(?:\b|^)(\d{1,2})\s*[\/月]\s*(\d{1,2})\s*(?:日)?/m);
-      if (!match) return {year: now.getFullYear(), month: now.getMonth()+1, day: now.getDate()};
-      let month = Number(match[1]), day = Number(match[2]);
-      // 「10月21日」形式にも対応
-      if (text.includes('月') && !text.match(/\d{1,2}\s*\/\s*\d{1,2}/)) {
-        const jp = text.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*日?/);
-        if (jp) { month = Number(jp[1]); day = Number(jp[2]); }
-      }
-      let year = now.getFullYear();
-      // 年をまたぐ予定表では、現在月より大幅に前の月を翌年として扱う。
-      if (month < now.getMonth()+1-6) year++;
-      return {year, month, day};
+    // 周辺駅：Overpass APIを使用し、路面電車・ライトレールを除外。駅名が同じで近接する重複候補は統合。
+    let lastGpsPoint = null;
+    const originalUpdateAddress = updateAddress;
+    updateAddress = async function(lat, lon, accuracy) { lastGpsPoint={lat,lon}; await originalUpdateAddress(lat,lon,accuracy); };
+    async function findNearbyStations(){
+      const status=document.getElementById('station-status'), list=document.getElementById('station-list');
+      if(!lastGpsPoint){status.textContent='先に「位置情報を許可」を押してください。';return;}
+      status.textContent='3km以内の駅を検索中…'; list.replaceChildren();
+      const {lat,lon}=lastGpsPoint;
+      const query=`[out:json][timeout:20];(node(around:3000,${lat},${lon})[railway=station];way(around:3000,${lat},${lon})[railway=station];relation(around:3000,${lat},${lon})[railway=station];node(around:3000,${lat},${lon})[station=subway];);out center tags;`;
+      try{
+        const res=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query)); if(!res.ok)throw Error('検索サービス応答エラー');
+        const data=await res.json(); const candidates=[];
+        for(const e of data.elements||[]){const t=e.tags||{}; if(t.railway==='tram_stop'||t.railway==='light_rail'||t.railway==='halt'||t.railway==='platform'||t.usage==='tourism')continue;
+          const name=t['name:ja']||t.name; if(!name)continue;
+          const lat2=e.lat??e.center?.lat, lon2=e.lon??e.center?.lon;if(lat2==null||lon2==null)continue;
+          const dist=Math.round(distanceMeters({lat,lon},{lat:lat2,lon:lon2}));if(dist>3000)continue;
+          const subway=t.station==='subway'||t.subway==='yes'||/地下鉄|メトロ/.test(t.operator||'');
+          let line=t['line']||t['railway:line']||t['name:line']||t['railway:ref']||t.ref||'';
+          if(!line && /東日本旅客鉄道|JR East|JR東日本/i.test(t.operator||'')) line='JR線（路線名データなし）';
+          else if(!line && t.operator) line=t.operator;
+          candidates.push({name,dist,subway,line,lat:lat2,lon:lon2}); }
+        candidates.sort((a,b)=>a.dist-b.dist);
+        const unique=[]; for(const st of candidates){const existing=unique.find(x=>x.name===st.name&&distanceMeters({lat:x.lat,lon:x.lon},{lat:st.lat,lon:st.lon})<350);if(existing){if(st.line&&!existing.line)existing.line=st.line;if(st.subway)existing.subway=true;}else unique.push(st);}
+        if(!unique.length){status.textContent='3km以内の駅が見つかりませんでした。';return;}
+        for(const st of unique.slice(0,40)){const item=document.createElement('div');item.className='station-item';const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;const meta=document.createElement('small');meta.textContent=`約${st.dist}m${st.line?' · '+st.line:''}`;item.append(title,meta);list.appendChild(item);}
+        status.textContent=`3km以内：${unique.length}駅（近接する同名候補は統合） · 路面電車・ライトレール除外`;
+      }catch(e){status.textContent='駅情報を取得できませんでした。通信状況を確認して再検索してください。';}
     }
+    document.getElementById('station-refresh').addEventListener('click',findNearbyStations);
 
-    function parseEventLines(text, now) {
-      const date = getEventDateFromText(text, now);
-      const lines = text.split(/\r?\n/);
-      const events = [];
-      for (const rawLine of lines) {
-        const line = rawLine.trim();
-        const m = line.match(/^(\d{1,2}):(\d{2})\s*(?:[｜|｜]\s*)?(.*)$/);
-        if (!m) continue;
-        const hour = Number(m[1]), minute = Number(m[2]);
-        if (hour > 23 || minute > 59) continue;
-        const rest = m[3].trim().replace(/^[｜|]\s*/, '');
-        const parts = rest.split(/\s*[｜|]\s*/).filter(Boolean);
-        const placeAndEvent = parts.shift() || rest || 'イベント';
-        const details = parts.join(' ｜ ');
-        const eventDate = new Date(date.year, date.month-1, date.day, hour, minute, 0, 0);
-        events.push({time:eventDate, timeText:`${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`, title:placeAndEvent, details, raw:line});
-      }
-      return events;
+    // TPシステムは外部サイトのため、ブラウザのCORS制限で内容を直接取得できない場合があります。
+    // 自動取得できた場合のみ「遅れ便情報」等を表示し、取得不可時は誤判定せず公式リンクを案内します。
+    async function checkHanedaDelay(){
+      const panel=document.getElementById('haneda-delay-alert');
+      try{
+        const res=await fetch('https://ttc.taxi-inf.jp/index.php',{cache:'no-store'});if(!res.ok)throw Error('blocked');
+        const html=await res.text(); const plain=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ');
+        const match=plain.match(/.{0,35}(遅れ便情報|遅延便情報|空車不足).{0,100}/);
+        if(match){document.getElementById('haneda-delay-text').textContent=match[0].trim();panel.classList.add('visible');}
+        else panel.classList.remove('visible');
+      }catch(e){panel.classList.remove('visible');}
     }
-
-    function renderEvents() {
-      const now = new Date();
-      const all = parseEventLines(eventSource.value, now);
-      eventNow.textContent = `現在 ${now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})} · 登録 ${all.length}件`;
-      const visible = all.filter(ev => Math.abs(ev.time.getTime()-now.getTime()) <= EVENT_WINDOW_MINUTES*60000)
-        .sort((a,b)=>a.time-b.time);
-      eventResults.replaceChildren();
-      if (!all.length) {
-        eventResults.innerHTML = '<div class="event-empty">時刻の行を読み取れません。例のように「15:10 ｜ 明治座 (公演) ｜ 出演者」の形式で入力してください。</div>';
-        return;
-      }
-      if (!visible.length) {
-        eventResults.innerHTML = '<div class="event-empty">現在時刻の前後30分以内に該当するイベントはありません。次のイベントが近づくと自動表示されます。</div>';
-        return;
-      }
-      for (const ev of visible) {
-        const card = document.createElement('article'); card.className='event-card';
-        const top = document.createElement('div'); top.className='event-card-top';
-        const time = document.createElement('time'); time.textContent=ev.timeText;
-        const delta = Math.round((ev.time.getTime()-now.getTime())/60000);
-        const badge = document.createElement('span'); badge.className='event-count';
-        badge.textContent = delta===0 ? '時刻です' : delta>0 ? `あと${delta}分` : `${Math.abs(delta)}分経過`;
-        top.append(time,badge);
-        const title = document.createElement('h3'); title.textContent=ev.title;
-        card.append(top,title);
-        if (ev.details) { const p=document.createElement('p'); p.textContent=ev.details; card.append(p); }
-        eventResults.append(card);
-      }
-    }
-
-    try {
-      const savedEvents = localStorage.getItem(EVENT_STORAGE_KEY);
-      if (savedEvents) eventSource.value = savedEvents;
-    } catch (e) { eventStatus.textContent='このブラウザでは保存領域を利用できない場合があります。'; }
-    document.getElementById('event-save').addEventListener('click', () => {
-      try { localStorage.setItem(EVENT_STORAGE_KEY, eventSource.value); eventStatus.textContent='保存しました。この端末のブラウザで次回も読み込まれます。'; }
-      catch (e) { eventStatus.textContent='保存できませんでした。ブラウザの保存設定を確認してください。'; }
-      renderEvents();
-    });
-    document.getElementById('event-clear').addEventListener('click', () => {
-      if (!confirm('入力欄と保存済みのイベント情報を消去しますか？')) return;
-      eventSource.value='';
-      try { localStorage.removeItem(EVENT_STORAGE_KEY); } catch (e) {}
-      eventStatus.textContent='入力と保存済みデータを消去しました。';
-      renderEvents();
-    });
-    renderEvents();
-    setInterval(renderEvents, 60000);
+    checkHanedaDelay(); setInterval(checkHanedaDelay,60000);
 
     refreshAll();
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。

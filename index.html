@@ -220,7 +220,8 @@
       <div class="station-meta" id="station-status">位置情報を許可すると、周辺の駅を検索できます。</div>
       <div class="event-display" aria-live="polite">
         <h3 style="margin:0;font-size:1rem">📍 登録済みイベント</h3>
-        <p class="muted" style="margin:5px 0 0">現在時刻の前後30分に該当するイベントは目立つ表示になります。</p>
+        <p class="muted" style="margin:5px 0 0">登録したイベント一覧画像は常時表示されます。時刻付きテキストイベントの強調表示も引き続き利用できます。</p>
+        <div id="scheduled-event-images" class="event-list event-image-display" aria-live="polite"></div>
         <div id="event-list" class="event-list"><div class="event-empty">イベント情報を読み込み中…</div></div>
       </div>
       <div id="station-list" class="station-list"></div>
@@ -385,7 +386,7 @@
 
       <div class="event-input-area image-ocr-area" id="event-image-board">
         <strong>🖼️ イベント情報画像（そのまま表示）</strong>
-        <p class="muted">イベント一覧のスクリーンショットを貼り付けるか、写真から選択してください。文字の自動読み取りは行わず、元画像をそのまま表示します。画像はこのブラウザに保存され、次回も表示されます。</p>
+        <p class="muted">イベント一覧のスクリーンショットを貼り付けるか、写真から選択してください。文字の自動読み取りは行わず、元画像を「登録済みイベント」欄に常時表示します。画像はこのブラウザに保存され、次回も表示されます。</p>
         <div id="event-image-drop" class="event-image-drop" tabindex="0" role="button" aria-label="イベント画像を貼り付ける領域">
           <span>📋 コピーしたスクリーンショットをここにペースト</span>
           <small>または下のボタンから写真・スクリーンショットを選択</small>
@@ -395,16 +396,13 @@
           <button id="event-image-paste" type="button">📋 クリップボードから画像を貼り付け</button>
           <button id="event-image-file-button" type="button" class="secondary">🖼️ 写真・スクショを選択</button>
         </div>
-        <label for="event-image-endtime"><strong>この画像の終演予想時刻</strong></label>
-        <input id="event-image-endtime" type="datetime-local" />
-        <p class="muted">画像を貼り付け・選択したあと、終演予想時刻を設定して「この時刻で画像を登録」を押してください。登録画像は終演予想時刻の前後30分だけ表示します。</p>
+        <p class="muted">画像を貼り付け・選択したあと、「画像を登録」を押してください。終演予想時刻の入力は不要です。</p>
         <img id="event-image-preview" alt="登録前のイベント情報画像プレビュー" hidden />
         <div class="event-actions">
-          <button id="event-image-register" type="button">この時刻で画像を登録</button>
+          <button id="event-image-register" type="button">画像を登録</button>
           <button id="event-image-clear" type="button" class="secondary">登録画像をすべて消去</button>
         </div>
         <p id="event-image-status" class="event-status" aria-live="polite">画像を貼り付けるか選択してください。</p>
-        <div id="scheduled-event-images" class="event-list" aria-live="polite"></div>
       </div>
 
       <p class="muted">※各行の先頭の時刻をイベント終了予定時刻として扱い、その前後30分以内は駅一覧の上にも強調表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了予定時刻が入力されていない場合、実際の終演時刻とは一致しません。</p>
@@ -675,7 +673,7 @@
       renderStationEventAlerts(events, now);
     }
 
-    // イベント画像はOCRせず、終演予想時刻の前後30分だけ表示します。
+    // イベント画像はOCRせず、登録済みイベント欄に常時表示します。
     const eventImageDrop = document.getElementById('event-image-drop');
     const eventImageFile = document.getElementById('event-image-file');
     const eventImagePaste = document.getElementById('event-image-paste');
@@ -683,7 +681,6 @@
     const eventImagePreview = document.getElementById('event-image-preview');
     const eventImageClear = document.getElementById('event-image-clear');
     const eventImageStatus = document.getElementById('event-image-status');
-    const eventImageEndtime = document.getElementById('event-image-endtime');
     const eventImageRegister = document.getElementById('event-image-register');
     const scheduledEventImages = document.getElementById('scheduled-event-images');
     let pendingEventImage = null;
@@ -736,37 +733,27 @@
       showPendingImage(blob);
       eventImageStatus.textContent = '画像を読み込みました。終演予想時刻を設定して登録してください。';
     }
-    function formatLocalDateTime(date) {
-      const pad = n => String(n).padStart(2, '0');
-      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    }
-    if (!eventImageEndtime.value) {
-      const defaultEnd = new Date(); defaultEnd.setMinutes(0,0,0); defaultEnd.setHours(defaultEnd.getHours()+1);
-      eventImageEndtime.value = formatLocalDateTime(defaultEnd);
-    }
     async function renderScheduledImages() {
       let images = [];
       try { images = await readScheduledImages(); }
       catch (err) { scheduledEventImages.textContent = '保存済み画像を読み込めませんでした。'; return; }
-      const now = new Date();
-      const visible = images.filter(item => item && item.blob && Math.abs((new Date(item.endTime)-now)/60000) <= 30)
-        .sort((a,b) => new Date(a.endTime)-new Date(b.endTime));
+      const visible = images.filter(item => item && item.blob)
+        .sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
       scheduledEventImages.replaceChildren();
       if (!visible.length) {
         const empty = document.createElement('div'); empty.className='event-empty';
-        empty.textContent = '現在、終演予想時刻の前後30分に表示対象の画像はありません。';
+        empty.textContent = 'イベント画像はまだ登録されていません。下の「イベント情報画像」から追加できます。';
         scheduledEventImages.appendChild(empty);
       }
       for (const item of visible) {
-        const card = document.createElement('article'); card.className='event-item is-near';
-        const date = new Date(item.endTime);
+        const card = document.createElement('article'); card.className='event-item is-near event-image-card';
         const title = document.createElement('div'); title.className='event-item-head';
         const time = document.createElement('span'); time.className='event-time';
-        time.textContent = `終演予想 ${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-        const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent = date < now ? '終了予定時刻経過' : '終了予定時刻前';
-        title.append(time,tag);
-        const img = document.createElement('img'); img.alt='イベント情報画像'; img.loading='lazy'; img.style.cssText='display:block;max-width:100%;max-height:420px;object-fit:contain;margin:10px auto;border-radius:8px'; img.src=URL.createObjectURL(item.blob);
+        time.textContent = 'イベント情報画像';
+        title.appendChild(time);
+        const img = document.createElement('img'); img.alt='イベント情報画像'; img.loading='lazy'; img.style.cssText='display:block;width:100%;max-width:100%;height:auto;max-height:none;object-fit:contain;margin:10px auto;border-radius:8px;cursor:zoom-in'; img.src=URL.createObjectURL(item.blob);
         img.addEventListener('load', () => URL.revokeObjectURL(img.src), {once:true});
+        img.addEventListener('click', () => { const url = URL.createObjectURL(item.blob); const win = window.open(url, '_blank'); if (!win) { URL.revokeObjectURL(url); } else { setTimeout(() => URL.revokeObjectURL(url), 60000); } });
         const del = document.createElement('button'); del.type='button'; del.className='secondary'; del.textContent='この画像を削除';
         del.addEventListener('click', async () => {
           const latest = await readScheduledImages();
@@ -776,7 +763,7 @@
         card.append(title,img,del); scheduledEventImages.appendChild(card);
       }
       const nextCount = images.length;
-      if (nextCount) eventImageStatus.textContent = `登録画像 ${nextCount}件。終演予想時刻の前後30分に該当する画像だけ表示します。`;
+      if (nextCount) eventImageStatus.textContent = `登録画像 ${nextCount}件。「登録済みイベント」欄に常時表示しています。`;
     }
     eventImageFile.addEventListener('change', () => {
       const file = eventImageFile.files && eventImageFile.files[0]; if (file) setEventImage(file);
@@ -808,13 +795,12 @@
     });
     eventImageRegister.addEventListener('click', async () => {
       if (!pendingEventImage) { eventImageStatus.textContent = '先に画像を貼り付けるか選択してください。'; return; }
-      if (!eventImageEndtime.value || !Number.isFinite(new Date(eventImageEndtime.value).getTime())) { eventImageStatus.textContent = '終演予想時刻を指定してください。'; return; }
       try {
         const list = await readScheduledImages();
-        list.push({id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, endTime: new Date(eventImageEndtime.value).toISOString(), blob: pendingEventImage});
+        list.push({id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, createdAt: Date.now(), blob: pendingEventImage});
         await writeScheduledImages(list);
         showPendingImage(null); pendingEventImage = null; eventImageFile.value = '';
-        eventImageStatus.textContent = '画像を登録しました。終演予想時刻の前後30分に自動表示されます。';
+        eventImageStatus.textContent = '画像を登録しました。「登録済みイベント」欄に常時表示されます。';
         await renderScheduledImages();
       } catch (err) { eventImageStatus.textContent = '画像を保存できませんでした。' + (err.message ? ' ' + err.message : ''); }
     });

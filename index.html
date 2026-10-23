@@ -395,11 +395,16 @@
           <button id="event-image-paste" type="button">📋 クリップボードから画像を貼り付け</button>
           <button id="event-image-file-button" type="button" class="secondary">🖼️ 写真・スクショを選択</button>
         </div>
-        <img id="event-image-preview" alt="イベント情報画像" hidden />
+        <label for="event-image-endtime"><strong>この画像の終演予想時刻</strong></label>
+        <input id="event-image-endtime" type="datetime-local" />
+        <p class="muted">画像を貼り付け・選択したあと、終演予想時刻を設定して「この時刻で画像を登録」を押してください。登録画像は終演予想時刻の前後30分だけ表示します。</p>
+        <img id="event-image-preview" alt="登録前のイベント情報画像プレビュー" hidden />
         <div class="event-actions">
-          <button id="event-image-clear" type="button" class="secondary">画像を消去</button>
+          <button id="event-image-register" type="button">この時刻で画像を登録</button>
+          <button id="event-image-clear" type="button" class="secondary">登録画像をすべて消去</button>
         </div>
         <p id="event-image-status" class="event-status" aria-live="polite">画像を貼り付けるか選択してください。</p>
+        <div id="scheduled-event-images" class="event-list" aria-live="polite"></div>
       </div>
 
       <p class="muted">※各行の先頭の時刻をイベント終了予定時刻として扱い、その前後30分以内は駅一覧の上にも強調表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了予定時刻が入力されていない場合、実際の終演時刻とは一致しません。</p>
@@ -670,7 +675,7 @@
       renderStationEventAlerts(events, now);
     }
 
-    // イベント画像はOCRせず、そのまま表示。IndexedDBに保存して再読み込み後も復元します。
+    // イベント画像はOCRせず、終演予想時刻の前後30分だけ表示します。
     const eventImageDrop = document.getElementById('event-image-drop');
     const eventImageFile = document.getElementById('event-image-file');
     const eventImagePaste = document.getElementById('event-image-paste');
@@ -678,8 +683,11 @@
     const eventImagePreview = document.getElementById('event-image-preview');
     const eventImageClear = document.getElementById('event-image-clear');
     const eventImageStatus = document.getElementById('event-image-status');
-    let eventImageBlob = null;
-    let eventImageObjectUrl = null;
+    const eventImageEndtime = document.getElementById('event-image-endtime');
+    const eventImageRegister = document.getElementById('event-image-register');
+    const scheduledEventImages = document.getElementById('scheduled-event-images');
+    let pendingEventImage = null;
+    let pendingObjectUrl = null;
     const EVENT_IMAGE_DB = 'kobachaTaxiDashboard';
     const EVENT_IMAGE_STORE = 'eventImage';
     function openEventImageDB() {
@@ -691,67 +699,87 @@
         request.onerror = () => reject(request.error || new Error('画像保存領域を開けませんでした。'));
       });
     }
-    async function storeEventImage(blob) {
+    async function readScheduledImages() {
+      const db = await openEventImageDB();
+      const list = await new Promise((resolve, reject) => {
+        const tx = db.transaction(EVENT_IMAGE_STORE, 'readonly');
+        const req = tx.objectStore(EVENT_IMAGE_STORE).get('scheduled');
+        req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+        req.onerror = () => reject(req.error || new Error('登録画像を読み込めませんでした。'));
+      });
+      db.close(); return list;
+    }
+    async function writeScheduledImages(list) {
       const db = await openEventImageDB();
       await new Promise((resolve, reject) => {
         const tx = db.transaction(EVENT_IMAGE_STORE, 'readwrite');
-        tx.objectStore(EVENT_IMAGE_STORE).put(blob, 'current');
+        tx.objectStore(EVENT_IMAGE_STORE).put(list, 'scheduled');
         tx.oncomplete = resolve;
         tx.onerror = () => reject(tx.error || new Error('画像を保存できませんでした。'));
         tx.onabort = () => reject(tx.error || new Error('画像保存が中断されました。'));
       });
       db.close();
     }
-    async function getStoredEventImage() {
-      const db = await openEventImageDB();
-      const blob = await new Promise((resolve, reject) => {
-        const tx = db.transaction(EVENT_IMAGE_STORE, 'readonly');
-        const request = tx.objectStore(EVENT_IMAGE_STORE).get('current');
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => reject(request.error || new Error('保存画像を読み込めませんでした。'));
-      });
-      db.close();
-      return blob;
-    }
-    async function deleteStoredEventImage() {
-      const db = await openEventImageDB();
-      await new Promise((resolve, reject) => {
-        const tx = db.transaction(EVENT_IMAGE_STORE, 'readwrite');
-        tx.objectStore(EVENT_IMAGE_STORE).delete('current');
-        tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error || new Error('保存画像を消去できませんでした。'));
-      });
-      db.close();
-    }
-    function showEventImage(blob) {
-      eventImageBlob = blob;
-      if (eventImageObjectUrl) URL.revokeObjectURL(eventImageObjectUrl);
-      eventImageObjectUrl = null;
-      if (!blob) {
-        eventImagePreview.removeAttribute('src');
-        eventImagePreview.hidden = true;
-        return;
-      }
-      eventImageObjectUrl = URL.createObjectURL(blob);
-      eventImagePreview.src = eventImageObjectUrl;
+    function showPendingImage(blob) {
+      pendingEventImage = blob;
+      if (pendingObjectUrl) URL.revokeObjectURL(pendingObjectUrl);
+      pendingObjectUrl = null;
+      if (!blob) { eventImagePreview.removeAttribute('src'); eventImagePreview.hidden = true; return; }
+      pendingObjectUrl = URL.createObjectURL(blob);
+      eventImagePreview.src = pendingObjectUrl;
       eventImagePreview.hidden = false;
     }
     async function setEventImage(blob) {
       if (!blob || !blob.type || !blob.type.startsWith('image/')) {
-        eventImageStatus.textContent = '画像ファイルを選択してください。';
-        return;
+        eventImageStatus.textContent = '画像ファイルを選択してください。'; return;
       }
-      showEventImage(blob);
-      try {
-        await storeEventImage(blob);
-        eventImageStatus.textContent = '画像を表示し、このブラウザに保存しました。次回も表示されます。';
-      } catch (err) {
-        eventImageStatus.textContent = '画像は表示しましたが、次回表示用の保存はできませんでした。' + (err.message ? ' ' + err.message : '');
+      showPendingImage(blob);
+      eventImageStatus.textContent = '画像を読み込みました。終演予想時刻を設定して登録してください。';
+    }
+    function formatLocalDateTime(date) {
+      const pad = n => String(n).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+    if (!eventImageEndtime.value) {
+      const defaultEnd = new Date(); defaultEnd.setMinutes(0,0,0); defaultEnd.setHours(defaultEnd.getHours()+1);
+      eventImageEndtime.value = formatLocalDateTime(defaultEnd);
+    }
+    async function renderScheduledImages() {
+      let images = [];
+      try { images = await readScheduledImages(); }
+      catch (err) { scheduledEventImages.textContent = '保存済み画像を読み込めませんでした。'; return; }
+      const now = new Date();
+      const visible = images.filter(item => item && item.blob && Math.abs((new Date(item.endTime)-now)/60000) <= 30)
+        .sort((a,b) => new Date(a.endTime)-new Date(b.endTime));
+      scheduledEventImages.replaceChildren();
+      if (!visible.length) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent = '現在、終演予想時刻の前後30分に表示対象の画像はありません。';
+        scheduledEventImages.appendChild(empty);
       }
+      for (const item of visible) {
+        const card = document.createElement('article'); card.className='event-item is-near';
+        const date = new Date(item.endTime);
+        const title = document.createElement('div'); title.className='event-item-head';
+        const time = document.createElement('span'); time.className='event-time';
+        time.textContent = `終演予想 ${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+        const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent = date < now ? '終了予定時刻経過' : '終了予定時刻前';
+        title.append(time,tag);
+        const img = document.createElement('img'); img.alt='イベント情報画像'; img.loading='lazy'; img.style.cssText='display:block;max-width:100%;max-height:420px;object-fit:contain;margin:10px auto;border-radius:8px'; img.src=URL.createObjectURL(item.blob);
+        img.addEventListener('load', () => URL.revokeObjectURL(img.src), {once:true});
+        const del = document.createElement('button'); del.type='button'; del.className='secondary'; del.textContent='この画像を削除';
+        del.addEventListener('click', async () => {
+          const latest = await readScheduledImages();
+          await writeScheduledImages(latest.filter(x => x.id !== item.id));
+          eventImageStatus.textContent = '登録画像を削除しました。'; renderScheduledImages();
+        });
+        card.append(title,img,del); scheduledEventImages.appendChild(card);
+      }
+      const nextCount = images.length;
+      if (nextCount) eventImageStatus.textContent = `登録画像 ${nextCount}件。終演予想時刻の前後30分に該当する画像だけ表示します。`;
     }
     eventImageFile.addEventListener('change', () => {
-      const file = eventImageFile.files && eventImageFile.files[0];
-      if (file) setEventImage(file);
+      const file = eventImageFile.files && eventImageFile.files[0]; if (file) setEventImage(file);
     });
     eventImageFileButton.addEventListener('click', () => eventImageFile.click());
     eventImagePaste.addEventListener('click', async () => {
@@ -763,49 +791,40 @@
             if (imageType) { await setEventImage(await clipboardItem.getType(imageType)); return; }
           }
           eventImageStatus.textContent = 'クリップボードに画像がありません。スクリーンショットをコピーしてから再度お試しください。';
-        } catch (err) {
-          eventImageStatus.textContent = 'クリップボードの読み取りが許可されませんでした。写真・スクショを選択してください。';
-        }
-      } else {
-        eventImageStatus.textContent = 'このブラウザでは直接読み込めません。写真・スクショを選択するか、画像を枠内にペーストしてください。';
-        eventImageDrop.focus();
-      }
+        } catch (err) { eventImageStatus.textContent = 'クリップボードの読み取りが許可されませんでした。写真・スクショを選択してください。'; }
+      } else { eventImageStatus.textContent = 'このブラウザでは直接読み込めません。写真・スクショを選択するか、画像を枠内にペーストしてください。'; eventImageDrop.focus(); }
     });
     eventImageDrop.addEventListener('click', (e) => { if (e.target !== eventImageFile) eventImageDrop.focus(); });
     eventImageDrop.addEventListener('paste', (e) => {
-      const items = Array.from(e.clipboardData?.items || []);
-      const item = items.find(x => x.type && x.type.startsWith('image/'));
+      const items = Array.from(e.clipboardData?.items || []); const item = items.find(x => x.type && x.type.startsWith('image/'));
       if (item) { e.preventDefault(); setEventImage(item.getAsFile()); }
       else eventImageStatus.textContent = 'クリップボードに画像がありません。画像をコピーしてから貼り付けてください。';
     });
     document.addEventListener('paste', (e) => {
       const target = e.target;
       if (target && (target.closest('#event-image-board') || target.matches('textarea,input'))) return;
-      const items = Array.from(e.clipboardData?.items || []);
-      const item = items.find(x => x.type && x.type.startsWith('image/'));
+      const items = Array.from(e.clipboardData?.items || []); const item = items.find(x => x.type && x.type.startsWith('image/'));
       if (item) setEventImage(item.getAsFile());
     });
-    eventImageClear.addEventListener('click', async () => {
-      showEventImage(null);
-      eventImageFile.value = '';
+    eventImageRegister.addEventListener('click', async () => {
+      if (!pendingEventImage) { eventImageStatus.textContent = '先に画像を貼り付けるか選択してください。'; return; }
+      if (!eventImageEndtime.value || !Number.isFinite(new Date(eventImageEndtime.value).getTime())) { eventImageStatus.textContent = '終演予想時刻を指定してください。'; return; }
       try {
-        await deleteStoredEventImage();
-        eventImageStatus.textContent = '表示中の画像と保存画像を消去しました。';
-      } catch (err) {
-        eventImageStatus.textContent = '画面の画像を消去しましたが、保存画像の消去はできませんでした。';
-      }
+        const list = await readScheduledImages();
+        list.push({id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, endTime: new Date(eventImageEndtime.value).toISOString(), blob: pendingEventImage});
+        await writeScheduledImages(list);
+        showPendingImage(null); pendingEventImage = null; eventImageFile.value = '';
+        eventImageStatus.textContent = '画像を登録しました。終演予想時刻の前後30分に自動表示されます。';
+        await renderScheduledImages();
+      } catch (err) { eventImageStatus.textContent = '画像を保存できませんでした。' + (err.message ? ' ' + err.message : ''); }
     });
-    (async () => {
-      try {
-        const savedImage = await getStoredEventImage();
-        if (savedImage) {
-          showEventImage(savedImage);
-          eventImageStatus.textContent = '保存済みのイベント画像を表示しています。新しい画像を選ぶと置き換わります。';
-        }
-      } catch (err) {
-        eventImageStatus.textContent = '画像を貼り付けるか選択してください。画像の保存機能が使えない場合は、再読み込み後に再選択が必要です。';
-      }
-    })();
+    eventImageClear.addEventListener('click', async () => {
+      showPendingImage(null); pendingEventImage = null; eventImageFile.value = '';
+      try { await writeScheduledImages([]); eventImageStatus.textContent = '登録画像をすべて消去しました。'; await renderScheduledImages(); }
+      catch (err) { eventImageStatus.textContent = '登録画像を消去できませんでした。'; }
+    });
+    renderScheduledImages();
+    setInterval(renderScheduledImages, 60000);
 
     document.getElementById('event-save').addEventListener('click', () => {
       try { localStorage.setItem(EVENT_STORAGE_KEY, eventSource.value); eventStatus.textContent='保存しました。登録済みイベントを更新しました。'; }

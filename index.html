@@ -180,7 +180,11 @@
 
     .quick-links{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
     .gps-address{white-space:normal;line-height:1.45}
-    .station-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
+    .station-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px;min-height:220px;max-height:420px;overflow-y:auto;overscroll-behavior:contain;align-content:start;padding:2px}
+    /* Keep the nearby-station area at a stable size while GPS/search results refresh. */
+    #stations-heading{scroll-margin-top:12px}
+    #station-status{min-height:2.6em;display:flex;align-items:center}
+    @media(max-width:600px){.station-list{grid-template-columns:1fr;min-height:260px;max-height:420px}}
     .station-item{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
     .station-item strong{display:block}.station-item small{color:var(--muted)}
     .delay-alert{display:none;margin-top:12px;padding:12px;border:1px solid #f3b6b6;background:#fff5f5;border-radius:12px}
@@ -214,6 +218,8 @@
     <nav class="quick-links" aria-label="外部アプリ">
       <a class="link-button" href="discord://" onclick="setTimeout(()=>{if(!document.hidden)location.href='https://discord.com/app'},700)" rel="noopener">💬 Discordを開く</a>
       <a class="link-button" id="jr-app-open" href="https://jreast-app.onelink.me/AUmo?c=jreappstart&pid=jreast-app&af_ios_url=https%3A%2F%2Fitunes.apple.com%2Fjp%2Fapp%2Fapple-store%2Fid820004378%3Fpt%3D641888%26ct%3Dekinet%26mt%3D8" rel="noopener">🚃 JR東日本アプリ【公式】を開く</a>
+      <a class="link-button" id="google-translate-open" href="https://apps.apple.com/jp/app/google-%E7%BF%BB%E8%A8%B3/id414706506" target="_blank" rel="noopener noreferrer">🌐 Google翻訳アプリを開く</a>
+      <a class="link-button" id="hills-app-open" href="https://apps.apple.com/jp/app/%E3%83%92%E3%83%AB%E3%82%BA%E3%82%A2%E3%83%97%E3%83%AA/id1537350778" target="_blank" rel="noopener noreferrer">🏙️ ヒルズアプリを開く</a>
     </nav>
     <section class="section" aria-labelledby="stations-heading">
       <div class="section-head"><div><h2 id="stations-heading">🚉 現在地から3km以内の駅</h2><p class="section-note">GPS取得後に検索。地下鉄を含み、路面電車・ライトレールは除外します。</p></div><button id="station-refresh" type="button">駅を検索</button></div>

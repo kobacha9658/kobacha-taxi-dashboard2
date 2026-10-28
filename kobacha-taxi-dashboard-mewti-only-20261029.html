@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#c9efff">
+  <title>こばちゃ専用｜タクシー情報ダッシュボード</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #10243a;
+      --blue: #1d4e89;
+      --bg: #f2f5f8;
+      --card: #ffffff;
+      --text: #17212b;
+      --muted: #637181;
+      --line: #dce3ea;
+      --accent: #f2b544;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN",
+        "Yu Gothic", Meiryo, sans-serif;
+    }
+    header {
+      padding: 24px 16px 20px;
+      color: #17334a;
+      background: linear-gradient(135deg, #d9f4ff, #bfeaff);
+    }
+    .header-inner, main, footer { width: min(1100px, 100%); margin: 0 auto; }
+    .header-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,.85fr); gap:24px; align-items:center; }
+    .header-title { min-width:0; }
+    .eyebrow { margin: 0 0 6px; color: #52788f; font-size: .82rem; letter-spacing: .08em; }
+    h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); line-height: 1.3; }
+    .subtitle { margin: 8px 0 0; color: #42677e; font-size: .92rem; }
+    .gps-bar { display:flex; align-items:center; gap:12px; margin-top:0; padding:12px 14px; border:1px solid rgba(255,255,255,.28); border-radius:14px; background:rgba(255,255,255,.55); color:#17334a; min-width:0; }
+    .gps-pin { font-size:1.45rem; flex:0 0 auto; }
+    .gps-copy { min-width:0; flex:1; }
+    .gps-label { margin:0 0 3px; color:#52788f; font-size:.78rem; font-weight:700; }
+    .gps-address { margin:0; font-size:.95rem; font-weight:700; line-height:1.45; overflow-wrap:anywhere; }
+    .gps-status { margin:4px 0 0; color:#42677e; font-size:.76rem; line-height:1.4; }
+    .gps-button { flex:0 0 auto; background:#fff; color:var(--navy); border:1px solid #b5d9eb; }
+    @media (max-width:680px) { .header-layout { grid-template-columns:minmax(0,1fr); gap:16px; } .gps-bar { align-items:flex-start; flex-wrap:wrap; } .gps-copy { flex-basis:calc(100% - 44px); } .gps-button { margin-left:42px; } }
+    main { padding: 16px; }
+    .toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+      justify-content: space-between; margin-bottom: 16px;
+    }
+    .status { color: var(--muted); font-size: .82rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    button, .link-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: 0; border-radius: 10px; padding: 10px 13px; font: inherit;
+      font-size: .9rem; font-weight: 700; text-decoration: none; cursor: pointer;
+    }
+    button { background: var(--navy); color: #fff; }
+    .link-button { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .section {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px; margin: 0 0 16px; box-shadow: 0 3px 12px rgba(16,36,58,.045);
+    }
+    .section-head {
+      display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between;
+      gap: 10px; margin-bottom: 14px;
+    }
+    h2 { margin: 0; font-size: 1.18rem; }
+    .section-note { margin: 5px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+    .camera-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .camera {
+      min-width: 0; overflow: hidden; border: 1px solid var(--line);
+      border-radius: 12px; background: #f8fafc;
+    }
+    .camera-title { margin: 0; padding: 10px 11px; font-size: .9rem; font-weight: 700; }
+    .image-wrap {
+      aspect-ratio: 4 / 3; display: grid; place-items: center; overflow: hidden;
+      background: #e8edf2; color: var(--muted);
+    }
+    .camera img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .image-error { padding: 12px; text-align: center; font-size: .82rem; line-height: 1.5; }
+    .camera-foot {
+      display: flex; justify-content: space-between; align-items: center; gap: 6px;
+      padding: 8px 10px; color: var(--muted); font-size: .74rem;
+    }
+    .camera-foot button { padding: 6px 8px; border-radius: 7px; font-size: .75rem; }
+    .info-panel {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 13px;
+      margin-top: 14px; background: #f8fafc;
+    }
+    .info-panel strong { display: block; margin-bottom: 4px; }
+    .info-panel p { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+    .disclaimer { margin: 14px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+    footer { padding: 0 16px 24px; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+
+    .rail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .rail-card { min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+    .rail-card h3 { margin: 0 0 7px; font-size: .96rem; }
+    .rail-card p { margin: 0 0 10px; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+    .rail-card a { color: var(--blue); font-size: .84rem; font-weight: 700; text-decoration: none; }
+    .rail-card a:hover { text-decoration: underline; }
+
+    @media (max-width: 380px) {
+      main { padding: 10px; }
+      .section { padding: 10px; }
+      .camera-grid { gap: 7px; }
+      .camera-title { padding: 8px 7px; font-size: .78rem; }
+      .camera-foot { padding: 7px; font-size: .68rem; }
+      .camera-foot button { font-size: .68rem; }
+    }
+
+    .rail-check-message{padding:12px;background:#fff;border:1px solid #f0d1d1;border-radius:10px;margin:8px 0 12px;line-height:1.55}
+    .rail-check-message strong{color:#b42318}
+    .rail-check-message p{font-size:.84rem;color:#53657a;margin:5px 0 0}
+    .rail-source-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .rail-source-grid a{display:flex;flex-direction:column;gap:4px;padding:11px 12px;border:1px solid #e5eaf0;border-radius:10px;background:#fff;text-decoration:none;min-width:0}
+    .rail-source-grid a strong{color:#075acb;font-size:.9rem}
+    .rail-source-grid a span{color:#53657a;font-size:.77rem;line-height:1.35}
+    @media(max-width:460px){.rail-source-grid{grid-template-columns:1fr 1fr}.rail-source-grid a{padding:9px}}
+    .rail-status-panel{border:1px solid #ffcaca;background:linear-gradient(135deg,#fff7f7,#fff);border-radius:14px;padding:12px}
+    .rail-status-heading{font-weight:800;color:#c62828;background:#ffeded;border-radius:9px;padding:10px 12px;margin-bottom:6px}
+    .rail-status-row{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 8px;border-bottom:1px solid #f2dddd;font-size:.92rem}
+    .rail-status-row strong{color:#183451}.rail-status-row>span:nth-child(2){color:#53657a;font-size:.85rem}
+    .rail-status-row a{color:#075acb;font-weight:700;text-decoration:none;white-space:nowrap}
+    .rail-status-note{font-size:.78rem;color:#6b7280;margin:12px 4px 2px}
+    @media(max-width:600px){.rail-status-row{grid-template-columns:1fr auto;gap:4px 8px}.rail-status-row>span:nth-child(2){grid-column:1/-1;grid-row:2}.rail-status-row .rail-links{grid-column:2;grid-row:1}}
+
+    .event-input-area { border:1px solid var(--line); border-radius:12px; padding:12px; background:#f8fafc; }
+    #event-source { display:block; width:100%; min-height:150px; margin-top:8px; padding:10px; border:1px solid var(--line); border-radius:10px; font:inherit; font-size:.9rem; resize:vertical; }
+    .event-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .event-status { margin:10px 0 0; color:var(--muted); font-size:.82rem; line-height:1.5; }
+    .image-ocr-area { margin-top:12px; }
+    .event-image-drop { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; min-height:112px; margin-top:10px; padding:14px; border:2px dashed var(--line); border-radius:12px; background:#fff; text-align:center; cursor:pointer; }
+    .event-image-drop:focus { outline:3px solid #93c5fd; outline-offset:2px; }
+    .event-image-drop small { color:var(--muted); }
+    .event-image-drop input { display:block; max-width:100%; margin-top:4px; }
+    #event-image-preview { display:block; max-width:100%; max-height:320px; object-fit:contain; margin:12px auto 0; border-radius:10px; }
+    #event-image-preview[hidden] { display:none; }
+    #event-image-text { margin-top:8px; min-height:130px; }
+
+    .event-display { margin:0 0 14px; }
+    .event-list { display:grid; gap:8px; margin-top:10px; }
+    .event-item { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff; }
+    .event-item.is-near { border-color:#e0a323; background:#fff8e7; }
+    .event-item.is-past { border-color:#efb7b7; background:#fff0f0; }
+    .event-item.is-future { border-color:#b8dfbf; background:#effaf0; }
+    .event-item.is-past .event-tag { background:#f8dada; color:#8f3030; }
+    .event-item.is-future .event-tag { background:#d9f0dd; color:#24683a; }
+    .event-item-head { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+    .event-time { font-weight:800; font-size:1.02rem; color:var(--navy); white-space:nowrap; }
+    .event-tag { font-size:.75rem; font-weight:700; border-radius:999px; padding:3px 8px; background:#e8edf2; color:#334155; }
+    .event-item.is-near .event-tag { background:#ffe3a3; color:#704900; }
+    .event-detail { margin:5px 0 0; font-size:.88rem; line-height:1.5; overflow-wrap:anywhere; }
+    .event-empty { border:1px dashed var(--line); border-radius:10px; padding:14px; color:var(--muted); font-size:.88rem; line-height:1.5; }
+    .muted { color: var(--muted); font-size: .85rem; line-height: 1.6; }
+    .official-panel, .legend-panel { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #f8fafc; }
+    .official-panel p { margin: 0 0 10px; }
+    .traffic-feature { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; overflow: hidden; }
+    .traffic-feature-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .traffic-feature-head p { margin: 5px 0 0; }
+    .traffic-feature iframe { display:block; width:100%; height:480px; border:1px solid var(--line); border-radius:10px; margin-top:12px; background:#f8fafc; }
+    .embed-fallback, .traffic-note { color:var(--muted); font-size:.8rem; line-height:1.6; }
+    .legend-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
+    .legend-grid > div { display:grid; grid-template-columns:18px 1fr; gap:2px 8px; align-items:center; font-size:.85rem; }
+    .legend-grid span { grid-column:2; color:var(--muted); font-size:.78rem; }
+    .legend-dot { display:block; width:15px; height:15px; border-radius:50%; grid-row:span 2; }
+    .legend-dot.green {background:#20a464}.legend-dot.yellow {background:#f2c230}.legend-dot.orange {background:#f28c28}.legend-dot.red {background:#d92d20}.legend-dot.gray {background:#8793a1}
+    @media(max-width:600px) { .traffic-feature iframe { height:360px; } }
+
+  
+    .map-preview-card{display:flex;align-items:center;gap:14px;padding:18px;margin-top:14px;border:1px solid var(--border,#d5dce3);border-radius:14px;background:var(--panel,#f6f8fa)}
+    .map-preview-icon{font-size:38px;flex:0 0 auto}
+    .map-preview-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+    .map-preview-copy span{font-size:.92rem;line-height:1.5;color:var(--muted,#667085)}
+    @media(max-width:600px){.map-preview-card{align-items:flex-start;flex-wrap:wrap}.map-preview-card .link-button{width:100%;text-align:center}}
+
+
+    .quick-links{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+    .gps-address{white-space:normal;line-height:1.45}
+    .station-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px;min-height:220px;max-height:420px;overflow-y:auto;overscroll-behavior:contain;align-content:start;padding:2px}
+    /* Keep the nearby-station area at a stable size while GPS/search results refresh. */
+    #stations-heading{scroll-margin-top:12px}
+    #station-status{min-height:2.6em;display:flex;align-items:center}
+    @media(max-width:600px){.station-list{grid-template-columns:1fr;min-height:260px;max-height:420px}}
+    .station-item{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+    .station-item strong{display:block}.station-item small{color:var(--muted)}
+    .delay-alert{display:none;margin-top:12px;padding:12px;border:1px solid #f3b6b6;background:#fff5f5;border-radius:12px}
+    .delay-alert.visible{display:block}.delay-alert strong{color:#b42318}
+    .station-meta{color:var(--muted);font-size:.8rem;line-height:1.5}
+
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner header-layout">
+      <div class="header-title">
+        <p class="eyebrow">KOBACHA'S TAXI DASHBOARD</p>
+        <h1>🚕 こばちゃ専用<br>タクシー情報ダッシュボード</h1>
+        <p class="subtitle">八重洲乗り場 ＆ 羽田空港待機プール</p>
+      </div>
+      <section class="gps-bar" aria-label="現在地情報" role="region">
+        <div class="gps-pin" aria-hidden="true">📍</div>
+        <div class="gps-copy">
+          <p class="gps-label">現在地情報（GPS）</p>
+          <p class="gps-address" id="gps-address">位置情報の許可が必要です</p>
+          <p class="gps-status" id="gps-status" aria-live="polite">許可すると移動に合わせて住所を更新します</p>
+        </div>
+        <button class="gps-button" id="gps-start" type="button">位置情報を許可</button>
+      </section>
+    </div>
+  </header>
+
+  <main>
+    <nav class="quick-links" aria-label="外部アプリ">
+      <a class="link-button" href="discord://" onclick="setTimeout(()=>{if(!document.hidden)location.href='https://discord.com/app'},700)" rel="noopener">💬 Discordを開く</a>
+      <a class="link-button" id="jr-app-open" href="https://jreast-app.onelink.me/AUmo?c=jreappstart&pid=jreast-app&af_ios_url=https%3A%2F%2Fitunes.apple.com%2Fjp%2Fapp%2Fapple-store%2Fid820004378%3Fpt%3D641888%26ct%3Dekinet%26mt%3D8" rel="noopener">🚃 JR東日本アプリ【公式】を開く</a>
+      <a class="link-button" id="google-translate-open" href="https://apps.apple.com/jp/app/google-%E7%BF%BB%E8%A8%B3/id414706506" target="_blank" rel="noopener noreferrer">🌐 Google翻訳アプリを開く</a>
+      <a class="link-button" id="hills-app-open" href="https://apps.apple.com/jp/app/%E3%83%92%E3%83%AB%E3%82%BA%E3%82%A2%E3%83%97%E3%83%AA/id1537350778" target="_blank" rel="noopener noreferrer">🏙️ ヒルズアプリを開く</a>
+    </nav>
+    <section class="section" aria-labelledby="stations-heading">
+      <div class="section-head"><div><h2 id="stations-heading">🚉 現在地から3km以内の駅</h2><p class="section-note">GPS取得後に検索。地下鉄を含み、路面電車・ライトレールは除外します。</p></div><button id="station-refresh" type="button">駅を検索</button></div>
+      <div class="station-meta" id="station-status">位置情報を許可すると、周辺の駅を検索できます。</div>
+      <div class="event-display" aria-live="polite">
+        <h3 style="margin:0;font-size:1rem">📍 登録済みイベント</h3>
+        <p class="muted" style="margin:5px 0 0">登録したイベント一覧画像は常時表示されます。時刻付きテキストイベントの強調表示も引き続き利用できます。</p>
+        <div id="scheduled-event-images" class="event-list event-image-display" aria-live="polite"></div>
+        <div id="event-list" class="event-list"><div class="event-empty">イベント情報を読み込み中…</div></div>
+      </div>
+      <div id="station-list" class="station-list"></div>
+    </section>
+    <div class="toolbar">
+      <div>
+        <strong>カメラ一覧</strong>
+        <div class="status" id="last-updated" aria-live="polite">読み込み準備中…</div>
+      </div>
+      <div class="actions">
+        <button id="refresh-all" type="button">↻ 画像を更新</button>
+        <a class="link-button" href="https://www.tokyo-tc.or.jp/driver/stand/livecamera/" target="_blank" rel="noopener noreferrer">公式カメラ案内 ↗</a>
+      </div>
+    </div>
+
+    <section class="section" aria-labelledby="yaesu-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="yaesu-heading">🚕 八重洲タクシー乗り場</h2>
+          <p class="section-note">現地の様子を2画面で確認</p>
+        </div>
+      </div>
+      <div class="camera-grid">
+        <article class="camera">
+          <h3 class="camera-title">八重洲カメラ ①</h3>
+          <div class="image-wrap">
+            <img data-camera="yaesu1" alt="八重洲タクシー乗り場カメラ1" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="yaesu1">準備中</span><button type="button" data-refresh="yaesu1">更新</button></div>
+        </article>
+        <article class="camera">
+          <h3 class="camera-title">八重洲カメラ ②</h3>
+          <div class="image-wrap">
+            <img data-camera="yaesu2" alt="八重洲タクシー乗り場カメラ2" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="yaesu2">準備中</span><button type="button" data-refresh="yaesu2">更新</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="haneda-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="haneda-heading">✈️ 羽田空港・待機プール</h2>
+          <p class="section-note">待機プール全体と東側を並べて表示</p>
+        </div>
+      </div>
+      <div class="info-panel" style="display:block; margin-bottom:12px;">
+        <div><strong>🔗 羽田レーダー（毎日変わるURL）</strong><p class="section-note">その日のURLを貼り付けて保存できます。次回以降も入力欄に保持されます。</p></div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+          <input id="haneda-radar-url" type="url" inputmode="url" autocomplete="url" placeholder="https://… 今日の羽田レーダーURLを貼り付け" aria-label="羽田レーダーのURL" style="flex:1 1 260px; min-width:0; padding:11px 12px; border:1px solid var(--line); border-radius:10px; font:inherit;">
+          <button type="button" id="save-haneda-radar-url">URLを保存</button>
+          <button type="button" id="open-haneda-radar-url">サイトに飛ぶ ↗</button>
+        </div>
+        <p id="haneda-radar-status" class="section-note" role="status" aria-live="polite" style="margin-top:7px;"></p>
+      </div>
+      <div class="camera-grid">
+        <article class="camera">
+          <h3 class="camera-title">待機プール</h3>
+          <div class="image-wrap">
+            <img data-camera="haneda1" alt="羽田空港タクシー待機プール" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="haneda1">準備中</span><button type="button" data-refresh="haneda1">更新</button></div>
+        </article>
+        <article class="camera">
+          <h3 class="camera-title">待機プール東側</h3>
+          <div class="image-wrap">
+            <img data-camera="haneda2" alt="羽田空港タクシー待機プール東側" loading="eager">
+          </div>
+          <div class="camera-foot"><span class="image-status" data-status="haneda2">準備中</span><button type="button" data-refresh="haneda2">更新</button></div>
+        </article>
+      </div>
+      <div id="haneda-delay-alert" class="delay-alert" aria-live="polite">
+        <strong>⚠️ 羽田TPシステムのお知らせ</strong>
+        <p id="haneda-delay-text" style="margin:6px 0 10px"></p>
+        <a class="link-button" href="https://ttc.taxi-inf.jp/index.php" target="_blank" rel="noopener noreferrer">第1待機所の状況を公式ページで確認 ↗</a>
+      </div>
+      <div class="info-panel"><div><strong>第1待機所・遅れ便情報</strong><p>公式TPシステムのお知らせ欄を確認します。自動取得が制限される場合は公式ページから確認してください。</p></div><a class="link-button" href="https://ttc.taxi-inf.jp/index.php" target="_blank" rel="noopener noreferrer">TPシステムを開く ↗</a></div>
+    </section>
+
+    <section class="section" aria-labelledby="flight-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="flight-heading">✈️ 羽田空港 国内線の遅延・欠航</h2>
+          <p class="section-note">羽田空港公式の運航情報を確認</p>
+        </div>
+      </div>
+      <div class="official-panel">
+        <p><strong>🛫 国内線 遅延・欠航情報（羽田空港公式）</strong></p>
+        <p class="muted">公式ページを開いて最新状況を確認できます。埋め込み表示が制限されている場合もあるため、下のリンクを用意しています。表示・通信エラーを「遅延・欠航なし」と判断しないでください。</p>
+        <a class="link-button" href="https://www.tokyo-haneda.com/flight/dms_cancel_delay.html" target="_blank" rel="noopener noreferrer">羽田空港公式の国内線遅延・欠航情報 ↗</a>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="traffic-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="traffic-heading">🚧 高速道路・一般道の渋滞情報</h2>
+          <p class="section-note">NAVITIMEを優先して埋め込み。表示できない場合はmew-tiへ切り替えできます。</p>
+        </div>
+      </div>
+      <div class="traffic-feature">
+        <div class="traffic-feature-head">
+          <div>
+            <strong id="traffic-map-title">🛣️ 首都高リアルタイム交通マップ（mew-ti）</strong>
+            <p class="muted" id="traffic-map-description">首都高の渋滞・混雑・事故・通行止めなどを地図上で確認できます。</p>
+          </div>
+          <div class="quick-links">
+            <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">mew-tiを別画面で開く ↗</a>
+          </div>
+        </div>
+        <iframe id="traffic-map-frame" title="首都高リアルタイム交通マップ（mew-ti）" src="https://search.shutoko-eng.jp/rtmap.html" loading="eager" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:520px;border:1px solid var(--border,#d5dce3);border-radius:10px;margin-top:12px;background:#fff"></iframe>
+        <p class="muted">※埋め込み表示は公式サイト側の制限により表示されない場合があります。その場合は「mew-tiを別画面で開く」を使用してください。</p>
+      </div>
+      <div class="legend-panel">
+        <strong>🚗 交通状況の色の目安</strong>
+        <p class="muted">凡例は一般的な目安です。実際の色・事故・通行止めなどは、必ず公式マップの表示を確認してください。</p>
+        <div class="legend-grid">
+          <div><i class="legend-dot green"></i><b>緑：順調・規制表示</b><span>実際の判定は公式地図を確認</span></div>
+          <div><i class="legend-dot yellow"></i><b>黄：混雑</b><span>速度低下に注意</span></div>
+          <div><i class="legend-dot orange"></i><b>オレンジ：渋滞</b><span>所要時間が延びる可能性</span></div>
+          <div><i class="legend-dot red"></i><b>赤：強い渋滞・規制表示</b><span>表示内容を公式地図で確認</span></div>
+          <div><i class="legend-dot gray"></i><b>グレー：通行止め・規制</b><span>迂回や通行可否を確認</span></div>
+        </div>
+      </div>
+      <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図の表示を利用します。</p>
+    </section>
+
+    <section class="section" aria-labelledby="event-input-heading">
+      <h2 id="event-input-heading">📝 イベント情報の入力・編集</h2>
+      <p class="muted">イベント一覧をまとめて貼り付けて保存。入力内容はこの端末のブラウザに保存されます。</p>
+      <div class="event-input-area">
+        <label for="event-source"><strong>イベント情報（まとめて貼り付け）</strong></label>
+        <textarea id="event-source" placeholder="例：
+[明日] 10/21 水
+[時刻表（終演順）]
+15:10 ｜ 明治座 (公演 ¥7000) ｜ 出演者
+17:00 ｜ 国際フォーラム (コンサート ¥8800)"></textarea>
+        <div class="event-actions">
+          <button id="event-save" type="button">保存して表示</button>
+          <button id="event-clear" class="secondary" type="button">入力を消去</button>
+        </div>
+        <p id="event-status" class="event-status" aria-live="polite">入力内容はこの端末のブラウザに保存されます。</p>
+      </div>
+
+      <div class="event-input-area image-ocr-area" id="event-image-board">
+        <strong>🖼️ イベント情報画像（そのまま表示）</strong>
+        <p class="muted">イベント一覧のスクリーンショットを貼り付けるか、写真から選択してください。文字の自動読み取りは行わず、元画像を「登録済みイベント」欄に常時表示します。画像はこのブラウザに保存され、次回も表示されます。</p>
+        <div id="event-image-drop" class="event-image-drop" tabindex="0" role="button" aria-label="イベント画像を貼り付ける領域">
+          <span>📋 コピーしたスクリーンショットをここにペースト</span>
+          <small>または下のボタンから写真・スクリーンショットを選択</small>
+          <input id="event-image-file" type="file" accept="image/*" aria-label="イベント画像を選択" />
+        </div>
+        <div class="event-actions">
+          <button id="event-image-paste" type="button">📋 クリップボードから画像を貼り付け</button>
+          <button id="event-image-file-button" type="button" class="secondary">🖼️ 写真・スクショを選択</button>
+        </div>
+        <p class="muted">画像を貼り付け・選択したあと、「画像を登録」を押してください。終演予想時刻の入力は不要です。</p>
+        <img id="event-image-preview" alt="登録前のイベント情報画像プレビュー" hidden />
+        <div class="event-actions">
+          <button id="event-image-register" type="button">画像を登録</button>
+          <button id="event-image-clear" type="button" class="secondary">登録画像をすべて消去</button>
+        </div>
+        <p id="event-image-status" class="event-status" aria-live="polite">画像を貼り付けるか選択してください。</p>
+      </div>
+
+      <p class="muted">※各行の先頭の時刻をイベント終了予定時刻として扱い、その前後30分以内は駅一覧の上にも強調表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了予定時刻が入力されていない場合、実際の終演時刻とは一致しません。</p>
+    </section>
+
+    <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
+  </main>
+
+  <footer>こばちゃ専用ダッシュボード · 羽田空港国内線／高速道路交通情報</footer>
+
+  <script>
+
+    // GPS位置を監視し、一定距離の移動があった場合だけ住所を再取得します。
+    // 住所変換にはOpenStreetMap Nominatimを使用し、過度な連続リクエストを避けます。
+    let gpsWatchId = null;
+    let gpsRefreshTimer = null;
+    let lastGpsCheckAt = 0;
+    let lastGeocodeAt = 0;
+    let lastGeocodeCoords = null;
+    let geocodeBusy = false;
+    let lastStationRefreshPoint = null;
+    let stationRefreshTimer = null;
+    const gpsAddress = document.getElementById('gps-address');
+    const gpsStatus = document.getElementById('gps-status');
+    const gpsStart = document.getElementById('gps-start');
+
+    function distanceMeters(a, b) {
+      const rad = n => n * Math.PI / 180;
+      const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+      const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;
+      return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+    }
+
+    async function updateAddress(lat, lon, accuracy) {
+      const now = Date.now();
+      lastGpsCheckAt = now;
+      const point = {lat, lon};
+      const moved = !lastGeocodeCoords || distanceMeters(lastGeocodeCoords, point) >= 10;
+      // GPS座標はwatchPositionで常時監視。住所は10m以上の移動で再取得し、外部APIへの連続アクセスを避けるため最低1秒間隔にします。
+      if (geocodeBusy) return;
+      if (lastGeocodeCoords && (!moved || now - lastGeocodeAt < 1000)) {
+        gpsStatus.textContent = `GPS最終確認 ${new Date(now).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
+        return;
+      }
+      geocodeBusy = true;
+      lastGeocodeAt = now;
+      lastGeocodeCoords = point;
+      gpsStatus.textContent = `位置を取得しました（誤差 約${Math.round(accuracy)}m）。住所を確認中…`;
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=ja`;
+        const response = await fetch(url, {headers:{'Accept':'application/json'}});
+        if (!response.ok) throw new Error('住所検索に失敗');
+        const data = await response.json();
+        const a = data.address || {};
+        const prefecture = a.province || a.state || a.prefecture || '';
+        const municipality = a.city || a.town || a.village || a.municipality || '';
+        const ward = a.city_district || a.county || '';
+        // 番地・建物番号・丁目は表示せず、町域名までを表示します。
+        const townArea = [a.suburb, a.quarter, a.neighbourhood]
+          .filter((v,i,arr) => v && arr.indexOf(v) === i)
+          .map(v => v.replace(/[一二三四五六七八九十百〇0-9]+丁目/g, '').trim())
+          .filter(Boolean);
+        const parts = [prefecture, municipality, ward, ...townArea].filter((v,i,arr) => v && arr.indexOf(v) === i);
+        gpsAddress.textContent = parts.join('') || '住所を特定できません';
+        gpsStatus.textContent = `最終取得 ${new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})} · 位置情報の誤差 約${Math.round(accuracy)}m`;
+      } catch (e) {
+        gpsAddress.textContent = '住所を取得できませんでした';
+        gpsStatus.textContent = 'GPS位置は取得済みです。通信状況を確認してください。';
+        lastGeocodeCoords = null;
+      } finally { geocodeBusy = false; }
+    }
+
+    function startGps() {
+      if (!('geolocation' in navigator)) {
+        gpsAddress.textContent = 'この端末・ブラウザはGPSに対応していません';
+        gpsStatus.textContent = '対応ブラウザで開いてください';
+        return;
+      }
+      if (gpsWatchId !== null) return;
+      gpsAddress.textContent = '現在地を取得中…';
+      gpsStatus.textContent = 'ブラウザの位置情報許可を確認してください';
+      gpsStart.textContent = '位置情報を監視中';
+      gpsStart.disabled = true;
+      gpsWatchId = navigator.geolocation.watchPosition(
+        pos => {
+          const lat=pos.coords.latitude, lon=pos.coords.longitude;
+          const previous=lastGpsPoint ? {...lastGpsPoint} : null;
+          updateAddress(lat, lon, pos.coords.accuracy || 0);
+          // 初回GPS取得時に3km圏の駅を検索し、その後は移動中に100m以上移動した時だけ再検索します。
+          const current={lat,lon};
+          if(!lastStationRefreshPoint) {
+            lastStationRefreshPoint=current;
+            if(stationRefreshTimer) clearTimeout(stationRefreshTimer);
+            stationRefreshTimer=setTimeout(()=>{ if(typeof findNearbyStations==='function') findNearbyStations(); },500);
+          } else if(distanceMeters(lastStationRefreshPoint,current)>=100) {
+            if(stationRefreshTimer) clearTimeout(stationRefreshTimer);
+            stationRefreshTimer=setTimeout(()=>{ if(typeof findNearbyStations==='function') findNearbyStations(); lastStationRefreshPoint=current; },1200);
+          }
+        },
+        err => {
+          const messages = {1:'位置情報が拒否されました。ブラウザ設定で許可してください。',2:'現在地を取得できません。GPSや通信状況を確認してください。',3:'位置情報の取得がタイムアウトしました。'};
+          gpsAddress.textContent = '現在地を取得できません';
+          gpsStatus.textContent = messages[err.code] || '位置情報を取得できません';
+          gpsStart.textContent = 'もう一度試す';
+          gpsStart.disabled = false;
+          gpsWatchId = null;
+        },
+        {enableHighAccuracy:true, maximumAge:0, timeout:20000}
+      );
+      // watchPositionでGPS座標を常時監視します（30秒ごとのポーリングに限定しません）。
+    }
+    gpsStart.addEventListener('click', startGps);
+
+    // JR東日本アプリへの公式誘導リンク（iPhoneでアプリが起動することをユーザー確認済み）。
+    // 通常のリンク遷移を利用し、アプリ／App Storeへの振り分けはリンク側に任せます。
+
+    const cameras = {
+      yaesu1: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/park.jpg",
+      yaesu2: "https://svc01.p-counter.jp/doc-server-taxi/tokyo_taxi/data/cam_a.jpg",
+      haneda1: "https://ttc.taxi-inf.jp/Real001.jpg",
+      haneda2: "https://ttc.taxi-inf.jp/Real002.jpg"
+    };
+
+    // 画像URLに時刻を付けて、ブラウザの古いキャッシュを避けます。
+    function refreshCamera(id) {
+      const img = document.querySelector(`[data-camera="${id}"]`);
+      const status = document.querySelector(`[data-status="${id}"]`);
+      if (!img || !cameras[id]) return;
+
+      status.textContent = "読み込み中…";
+      img.onload = () => {
+        status.textContent = "表示中";
+      };
+      img.onerror = () => {
+        status.textContent = "表示できません";
+        const wrap = img.parentElement;
+        wrap.innerHTML = '<div class="image-error">画像を読み込めませんでした。<br>通信状況を確認するか、公式カメラ案内を開いてください。</div>';
+      };
+
+      const separator = cameras[id].includes("?") ? "&" : "?";
+      img.src = cameras[id] + separator + "_refresh=" + Date.now();
+    }
+
+    function refreshAll() {
+      // エラー表示になっていた画像枠も復元できるよう、img要素を作り直します。
+      Object.keys(cameras).forEach((id) => {
+        const oldImg = document.querySelector(`[data-camera="${id}"]`);
+        const wrap = oldImg ? oldImg.parentElement : document.querySelector(`[data-status="${id}"]`)?.closest(".camera")?.querySelector(".image-wrap");
+        if (wrap && !wrap.querySelector("img")) {
+          const img = document.createElement("img");
+          img.dataset.camera = id;
+          img.alt = ({
+            yaesu1: "八重洲タクシー乗り場カメラ1",
+            yaesu2: "八重洲タクシー乗り場カメラ2",
+            haneda1: "羽田空港タクシー待機プール",
+            haneda2: "羽田空港タクシー待機プール東側"
+          })[id];
+          wrap.replaceChildren(img);
+        }
+        refreshCamera(id);
+      });
+      document.getElementById("last-updated").textContent =
+        "最終更新操作：" + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    // イベント情報：端末内保存・日付見出しの判定・表示を行います。
+    const EVENT_STORAGE_KEY = 'kobachaTaxiDashboardEventsV1';
+    const eventSource = document.getElementById('event-source');
+    const eventList = document.getElementById('event-list');
+    const eventStatus = document.getElementById('event-status');
+
+    function inferEventDate(month, day, now) {
+      let year = now.getFullYear();
+      let date = new Date(year, month - 1, day);
+      const diffDays = (date - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000;
+      if (diffDays < -180) date = new Date(year + 1, month - 1, day);
+      else if (diffDays > 180) date = new Date(year - 1, month - 1, day);
+      return date;
+    }
+
+    function parseEventText(text) {
+      const lines = text.split(/\r?\n/);
+      const events = [];
+      let currentDate = null;
+      const now = new Date();
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        const dateMatch = line.match(/(?:\[([^\]]+)\]\s*)?(\d{1,2})\s*[\/月.-]\s*(\d{1,2})\s*日?/);
+        if (dateMatch && !/^\d{1,2}:\d{2}/.test(line)) {
+          const month = Number(dateMatch[2]), day = Number(dateMatch[3]);
+          if (month >= 1 && month <= 12 && day >= 1 && day <= 31) currentDate = inferEventDate(month, day, now);
+          continue;
+        }
+        const timeMatch = line.match(/^\s*(\d{1,2}):(\d{2})\s*[｜|｜\-–—:]?\s*(.*)$/);
+        if (!timeMatch) continue;
+        const hour = Number(timeMatch[1]), minute = Number(timeMatch[2]);
+        if (hour > 23 || minute > 59) continue;
+        const date = currentDate ? new Date(currentDate) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        date.setHours(hour, minute, 0, 0);
+        events.push({date, time: `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`, detail: timeMatch[3].trim() || '詳細情報なし'});
+      }
+      return events;
+    }
+
+    function renderStationEventAlerts(events, now = new Date()) {
+      const alertBox = document.getElementById('station-event-alerts');
+      if (!alertBox) return;
+      alertBox.replaceChildren();
+      const active = events.filter(ev => Math.abs((ev.date - now) / 60000) <= 30).sort((a,b)=>a.date-b.date);
+      if (!active.length) {
+        // 既存の駅一覧はそのまま。対象イベントがない時は通知欄だけを空にする。
+        return;
+      }
+      const heading = document.createElement('h3');
+      heading.style.cssText = 'margin:0 0 7px;font-size:1rem';
+      heading.textContent = '⚠️ 終了予定時刻の前後30分以内のイベント';
+      alertBox.appendChild(heading);
+      for (const ev of active) {
+        const item = document.createElement('article');
+        item.className = 'event-item is-near ' + (ev.date < now ? 'is-past' : 'is-future');
+        const head = document.createElement('div'); head.className = 'event-item-head';
+        const time = document.createElement('span'); time.className = 'event-time';
+        time.textContent = `${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time} 終了予定`;
+        const tag = document.createElement('span'); tag.className = 'event-tag'; tag.textContent = '現在地周辺の駅選びの参考';
+        head.append(time, tag);
+        const detail = document.createElement('p'); detail.className = 'event-detail'; detail.textContent = ev.detail;
+        item.append(head, detail); alertBox.appendChild(item);
+      }
+    }
+
+    function renderEvents() {
+      const text = eventSource.value.trim();
+      eventList.replaceChildren();
+      if (!text) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent='イベント情報がまだ登録されていません。下の欄に一覧を貼り付けて「保存して表示」を押してください。';
+        eventList.appendChild(empty);
+        renderStationEventAlerts([], new Date());
+        return;
+      }
+      const events = parseEventText(text).sort((a,b)=>a.date-b.date);
+      if (!events.length) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent='時刻付きのイベントを読み取れませんでした。例のように「15:10 ｜ 会場名・イベント名」の形式で入力してください。';
+        eventList.appendChild(empty);
+        renderStationEventAlerts([], new Date());
+        return;
+      }
+      const now = new Date();
+      // 登録済みイベント欄には、黄色ハイライト対象（終了予定時刻の前後30分以内）のみ表示する。
+      const activeEvents = events.filter(ev => Math.abs((ev.date - now) / 60000) <= 30);
+      if (!activeEvents.length) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent='現在、終了予定時刻の前後30分以内に該当するイベントはありません。';
+        eventList.appendChild(empty);
+      } else {
+        for (const ev of activeEvents) {
+          const item = document.createElement('article'); item.className='event-item is-near ' + (ev.date < now ? 'is-past' : 'is-future');
+          const head = document.createElement('div'); head.className='event-item-head';
+          const time = document.createElement('span'); time.className='event-time'; time.textContent=`${ev.date.getMonth()+1}/${ev.date.getDate()} ${ev.time}`;
+          head.appendChild(time);
+          const tag = document.createElement('span'); tag.className='event-tag'; tag.textContent=ev.date < now ? '終了予定時刻経過' : '終了予定時刻前'; head.appendChild(tag);
+          const detail = document.createElement('p'); detail.className='event-detail'; detail.textContent=ev.detail;
+          item.append(head,detail); eventList.appendChild(item);
+        }
+      }
+      renderStationEventAlerts(events, now);
+    }
+
+    // イベント画像はOCRせず、登録済みイベント欄に常時表示します。
+    const eventImageDrop = document.getElementById('event-image-drop');
+    const eventImageFile = document.getElementById('event-image-file');
+    const eventImagePaste = document.getElementById('event-image-paste');
+    const eventImageFileButton = document.getElementById('event-image-file-button');
+    const eventImagePreview = document.getElementById('event-image-preview');
+    const eventImageClear = document.getElementById('event-image-clear');
+    const eventImageStatus = document.getElementById('event-image-status');
+    const eventImageRegister = document.getElementById('event-image-register');
+    const scheduledEventImages = document.getElementById('scheduled-event-images');
+    let pendingEventImage = null;
+    let pendingObjectUrl = null;
+    const EVENT_IMAGE_DB = 'kobachaTaxiDashboard';
+    const EVENT_IMAGE_STORE = 'eventImage';
+    function openEventImageDB() {
+      return new Promise((resolve, reject) => {
+        if (!('indexedDB' in window)) return reject(new Error('このブラウザは画像保存に対応していません。'));
+        const request = indexedDB.open(EVENT_IMAGE_DB, 1);
+        request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(EVENT_IMAGE_STORE)) request.result.createObjectStore(EVENT_IMAGE_STORE); };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('画像保存領域を開けませんでした。'));
+      });
+    }
+    async function readScheduledImages() {
+      const db = await openEventImageDB();
+      const list = await new Promise((resolve, reject) => {
+        const tx = db.transaction(EVENT_IMAGE_STORE, 'readonly');
+        const req = tx.objectStore(EVENT_IMAGE_STORE).get('scheduled');
+        req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+        req.onerror = () => reject(req.error || new Error('登録画像を読み込めませんでした。'));
+      });
+      db.close(); return list;
+    }
+    async function writeScheduledImages(list) {
+      const db = await openEventImageDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(EVENT_IMAGE_STORE, 'readwrite');
+        tx.objectStore(EVENT_IMAGE_STORE).put(list, 'scheduled');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error || new Error('画像を保存できませんでした。'));
+        tx.onabort = () => reject(tx.error || new Error('画像保存が中断されました。'));
+      });
+      db.close();
+    }
+    function showPendingImage(blob) {
+      pendingEventImage = blob;
+      if (pendingObjectUrl) URL.revokeObjectURL(pendingObjectUrl);
+      pendingObjectUrl = null;
+      if (!blob) { eventImagePreview.removeAttribute('src'); eventImagePreview.hidden = true; return; }
+      pendingObjectUrl = URL.createObjectURL(blob);
+      eventImagePreview.src = pendingObjectUrl;
+      eventImagePreview.hidden = false;
+    }
+    async function setEventImage(blob) {
+      if (!blob || !blob.type || !blob.type.startsWith('image/')) {
+        eventImageStatus.textContent = '画像ファイルを選択してください。'; return;
+      }
+      showPendingImage(blob);
+      eventImageStatus.textContent = '画像を読み込みました。終演予想時刻を設定して登録してください。';
+    }
+    async function renderScheduledImages() {
+      let images = [];
+      try { images = await readScheduledImages(); }
+      catch (err) { scheduledEventImages.textContent = '保存済み画像を読み込めませんでした。'; return; }
+      const visible = images.filter(item => item && item.blob)
+        .sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+      scheduledEventImages.replaceChildren();
+      if (!visible.length) {
+        const empty = document.createElement('div'); empty.className='event-empty';
+        empty.textContent = 'イベント画像はまだ登録されていません。下の「イベント情報画像」から追加できます。';
+        scheduledEventImages.appendChild(empty);
+      }
+      for (const item of visible) {
+        const card = document.createElement('article'); card.className='event-item is-near event-image-card';
+        const title = document.createElement('div'); title.className='event-item-head';
+        const time = document.createElement('span'); time.className='event-time';
+        time.textContent = 'イベント情報画像';
+        title.appendChild(time);
+        const img = document.createElement('img'); img.alt='イベント情報画像'; img.loading='lazy'; img.style.cssText='display:block;width:100%;max-width:100%;height:auto;max-height:none;object-fit:contain;margin:10px auto;border-radius:8px;cursor:zoom-in'; img.src=URL.createObjectURL(item.blob);
+        img.addEventListener('load', () => URL.revokeObjectURL(img.src), {once:true});
+        img.addEventListener('click', () => { const url = URL.createObjectURL(item.blob); const win = window.open(url, '_blank'); if (!win) { URL.revokeObjectURL(url); } else { setTimeout(() => URL.revokeObjectURL(url), 60000); } });
+        const del = document.createElement('button'); del.type='button'; del.className='secondary'; del.textContent='この画像を削除';
+        del.addEventListener('click', async () => {
+          const latest = await readScheduledImages();
+          await writeScheduledImages(latest.filter(x => x.id !== item.id));
+          eventImageStatus.textContent = '登録画像を削除しました。'; renderScheduledImages();
+        });
+        card.append(title,img,del); scheduledEventImages.appendChild(card);
+      }
+      const nextCount = images.length;
+      if (nextCount) eventImageStatus.textContent = `登録画像 ${nextCount}件。「登録済みイベント」欄に常時表示しています。`;
+    }
+    eventImageFile.addEventListener('change', () => {
+      const file = eventImageFile.files && eventImageFile.files[0]; if (file) setEventImage(file);
+    });
+    eventImageFileButton.addEventListener('click', () => eventImageFile.click());
+    eventImagePaste.addEventListener('click', async () => {
+      if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
+        try {
+          const clipboardItems = await navigator.clipboard.read();
+          for (const clipboardItem of clipboardItems) {
+            const imageType = clipboardItem.types.find(type => type.startsWith('image/'));
+            if (imageType) { await setEventImage(await clipboardItem.getType(imageType)); return; }
+          }
+          eventImageStatus.textContent = 'クリップボードに画像がありません。スクリーンショットをコピーしてから再度お試しください。';
+        } catch (err) { eventImageStatus.textContent = 'クリップボードの読み取りが許可されませんでした。写真・スクショを選択してください。'; }
+      } else { eventImageStatus.textContent = 'このブラウザでは直接読み込めません。写真・スクショを選択するか、画像を枠内にペーストしてください。'; eventImageDrop.focus(); }
+    });
+    eventImageDrop.addEventListener('click', (e) => { if (e.target !== eventImageFile) eventImageDrop.focus(); });
+    eventImageDrop.addEventListener('paste', (e) => {
+      const items = Array.from(e.clipboardData?.items || []); const item = items.find(x => x.type && x.type.startsWith('image/'));
+      if (item) { e.preventDefault(); setEventImage(item.getAsFile()); }
+      else eventImageStatus.textContent = 'クリップボードに画像がありません。画像をコピーしてから貼り付けてください。';
+    });
+    document.addEventListener('paste', (e) => {
+      const target = e.target;
+      if (target && (target.closest('#event-image-board') || target.matches('textarea,input'))) return;
+      const items = Array.from(e.clipboardData?.items || []); const item = items.find(x => x.type && x.type.startsWith('image/'));
+      if (item) setEventImage(item.getAsFile());
+    });
+    eventImageRegister.addEventListener('click', async () => {
+      if (!pendingEventImage) { eventImageStatus.textContent = '先に画像を貼り付けるか選択してください。'; return; }
+      try {
+        const list = await readScheduledImages();
+        list.push({id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, createdAt: Date.now(), blob: pendingEventImage});
+        await writeScheduledImages(list);
+        showPendingImage(null); pendingEventImage = null; eventImageFile.value = '';
+        eventImageStatus.textContent = '画像を登録しました。「登録済みイベント」欄に常時表示されます。';
+        await renderScheduledImages();
+      } catch (err) { eventImageStatus.textContent = '画像を保存できませんでした。' + (err.message ? ' ' + err.message : ''); }
+    });
+    eventImageClear.addEventListener('click', async () => {
+      showPendingImage(null); pendingEventImage = null; eventImageFile.value = '';
+      try { await writeScheduledImages([]); eventImageStatus.textContent = '登録画像をすべて消去しました。'; await renderScheduledImages(); }
+      catch (err) { eventImageStatus.textContent = '登録画像を消去できませんでした。'; }
+    });
+    renderScheduledImages();
+    setInterval(renderScheduledImages, 60000);
+
+    document.getElementById('event-save').addEventListener('click', () => {
+      try { localStorage.setItem(EVENT_STORAGE_KEY, eventSource.value); eventStatus.textContent='保存しました。登録済みイベントを更新しました。'; }
+      catch (e) { eventStatus.textContent='このブラウザでは保存できませんでした。入力内容は画面上で表示します。'; }
+      renderEvents();
+    });
+    document.getElementById('event-clear').addEventListener('click', () => {
+      eventSource.value='';
+      try { localStorage.removeItem(EVENT_STORAGE_KEY); } catch (e) {}
+      eventStatus.textContent='イベント情報を消去しました。';
+      renderEvents();
+    });
+    try {
+      const savedEvents = localStorage.getItem(EVENT_STORAGE_KEY);
+      if (savedEvents) { eventSource.value=savedEvents; eventStatus.textContent='この端末に保存されたイベント情報を読み込みました。'; }
+    } catch (e) { eventStatus.textContent='ブラウザ内保存は利用できません。保存できない場合はページを開いたままご利用ください。'; }
+    renderEvents();
+    setInterval(renderEvents, 60000);
+
+    document.getElementById("refresh-all").addEventListener("click", refreshAll);
+    document.querySelectorAll("[data-refresh]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const id = button.dataset.refresh;
+        const img = document.querySelector(`[data-camera="${id}"]`);
+        const wrap = img ? img.parentElement : document.querySelector(`[data-status="${id}"]`)?.closest(".camera")?.querySelector(".image-wrap");
+        if (wrap && !wrap.querySelector("img")) {
+          const restored = document.createElement("img");
+          restored.dataset.camera = id;
+          restored.alt = id.startsWith("yaesu") ? "八重洲タクシー乗り場カメラ" : "羽田空港タクシー待機プール";
+          wrap.replaceChildren(restored);
+        }
+        refreshCamera(id);
+      });
+    });
+
+
+    function normalizeRailLine(rawLine, operator='') {
+      let line=String(rawLine).trim();
+      if(!line) return '';
+      // Prefix abbreviated route names with their railway company where known.
+      if(/^(JR|ＪＲ)/i.test(line)) {
+        line=line.replace(/^(ＪＲ)/i,'JR');
+        return /線|新幹線|電車/.test(line) ? line : `JR${line}線`;
+      }
+      const prefixes=[
+        [/西武鉄道|西武/i,'西武'],[/東武鉄道|東武/i,'東武'],[/京王電鉄|京王/i,'京王'],
+        [/小田急電鉄|小田急/i,'小田急'],[/京成電鉄|京成/i,'京成'],[/京浜急行|京急/i,'京急'],
+        [/東京急行|東急/i,'東急'],[/相模鉄道|相鉄/i,'相鉄'],[/東日本旅客鉄道|JR East|JR東日本/i,'JR'],
+        [/東京地下鉄|東京メトロ/i,'東京メトロ'],[/東京都交通局|都営地下鉄/i,'都営地下鉄']
+      ];
+      let prefix='';
+      for(const [pattern,label] of prefixes){if(pattern.test(operator)){prefix=label;break;}}
+      if(prefix && !line.startsWith(prefix)) line=prefix+line;
+      if(prefix && prefix!=='東京メトロ' && prefix!=='都営地下鉄' && !/線|新幹線/.test(line)) line+='線';
+      return line;
+    }
+
+    // 周辺駅：Overpass APIを使用し、路面電車・ライトレールを除外。駅名が同じで近接する重複候補は統合。
+    let lastGpsPoint = null;
+    const originalUpdateAddress = updateAddress;
+    updateAddress = async function(lat, lon, accuracy) { lastGpsPoint={lat,lon}; await originalUpdateAddress(lat,lon,accuracy); };
+    async function findNearbyStations(){
+      const status=document.getElementById('station-status'), list=document.getElementById('station-list');
+      if(!lastGpsPoint){status.textContent='先に「位置情報を許可」を押してください。';return;}
+      status.textContent='3km以内の駅を検索中…'; list.replaceChildren();
+      const {lat,lon}=lastGpsPoint;
+      const query=`[out:json][timeout:20];(node(around:3000,${lat},${lon})[railway=station];way(around:3000,${lat},${lon})[railway=station];relation(around:3000,${lat},${lon})[railway=station];node(around:3000,${lat},${lon})[station=subway];);out center tags;`;
+      try{
+        const res=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query)); if(!res.ok)throw Error('検索サービス応答エラー');
+        const data=await res.json(); const candidates=[];
+        for(const e of data.elements||[]){const t=e.tags||{}; if(t.railway==='tram_stop'||t.railway==='light_rail'||t.railway==='halt'||t.railway==='platform'||t.usage==='tourism')continue;
+          const name=t['name:ja']||t.name; if(!name)continue;
+          const lat2=e.lat??e.center?.lat, lon2=e.lon??e.center?.lon;if(lat2==null||lon2==null)continue;
+          const dist=Math.round(distanceMeters({lat,lon},{lat:lat2,lon:lon2}));if(dist>3000)continue;
+          const subway=t.station==='subway'||t.subway==='yes'||/地下鉄|メトロ/.test(t.operator||'');
+          let line=t['line']||t['railway:line']||t['name:line']||t['railway:ref']||'';
+          const operator=t.operator||t['operator:ja']||'';
+          if(line) line=normalizeRailLine(line,operator);
+          else if(/東日本旅客鉄道|JR East|JR東日本|JRグループ/i.test(operator)) line='JR線（路線名データなし）';
+          else if(/西武鉄道|西武/i.test(operator)) line='西武線（路線名データなし）';
+          else if(/東武鉄道|東武/i.test(operator)) line='東武線（路線名データなし）';
+          else if(/京王電鉄|京王/i.test(operator)) line='京王線（路線名データなし）';
+          else if(/小田急電鉄|小田急/i.test(operator)) line='小田急線（路線名データなし）';
+          else if(/東京地下鉄|東京メトロ/i.test(operator)) line='東京メトロ（路線名データなし）';
+          else if(/都営地下鉄|東京都交通局/i.test(operator)) line='都営地下鉄（路線名データなし）';
+          else if(operator) line=operator;
+          candidates.push({name,dist,subway,line,lat:lat2,lon:lon2}); }
+        candidates.sort((a,b)=>a.dist-b.dist);
+        // 同じ駅名の上下線・複数ホームは1つにまとめ、路線情報を統合して表示。
+        const unique=[]; for(const st of candidates){const existing=unique.find(x=>x.name===st.name);if(existing){existing.dist=Math.min(existing.dist,st.dist);if(st.line&&!existing.lines.includes(st.line))existing.lines.push(st.line);if(st.subway)existing.subway=true;}else unique.push({...st,lines:st.line?[st.line]:[]});}
+        unique.sort((a,b)=>a.dist-b.dist);
+        if(!unique.length){status.textContent='3km以内の駅が見つかりませんでした。';return;}
+        for(const st of unique.slice(0,10)){const item=document.createElement('div');item.className='station-item';const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;const meta=document.createElement('small');meta.textContent=`約${st.dist}m${st.lines.length?' · '+st.lines.join('・'):''}`;item.append(title,meta);list.appendChild(item);}
+        status.textContent=`近い順に最大10駅を表示（3km以内の候補：${unique.length}駅・同じ駅名の上下線／複数ホームは統合） · 路面電車・ライトレール除外`;
+      }catch(e){status.textContent='駅情報を取得できませんでした。通信状況を確認して再検索してください。';}
+    }
+    document.getElementById('station-refresh').addEventListener('click',findNearbyStations);
+
+    // TPシステムは外部サイトのため、ブラウザのCORS制限で内容を直接取得できない場合があります。
+    // 自動取得できた場合のみ「遅れ便情報」等を表示し、取得不可時は誤判定せず公式リンクを案内します。
+    async function checkHanedaDelay(){
+      const panel=document.getElementById('haneda-delay-alert');
+      try{
+        const res=await fetch('https://ttc.taxi-inf.jp/index.php',{cache:'no-store'});if(!res.ok)throw Error('blocked');
+        const html=await res.text(); const plain=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ');
+        const match=plain.match(/.{0,35}(遅れ便情報|遅延便情報|空車不足).{0,100}/);
+        if(match){document.getElementById('haneda-delay-text').textContent=match[0].trim();panel.classList.add('visible');}
+        else panel.classList.remove('visible');
+      }catch(e){panel.classList.remove('visible');}
+    }
+    checkHanedaDelay(); setInterval(checkHanedaDelay,60000);
+
+    // 毎日変わる羽田レーダーURLを保存して、ボタンから開く
+    (() => {
+      const input = document.getElementById('haneda-radar-url');
+      const status = document.getElementById('haneda-radar-status');
+      const key = 'kobachaHanedaRadarUrl';
+      const saved = localStorage.getItem(key);
+      if (saved) input.value = saved;
+      document.getElementById('save-haneda-radar-url').addEventListener('click', () => {
+        const value = input.value.trim();
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('invalid protocol');
+          localStorage.setItem(key, parsed.href);
+          input.value = parsed.href;
+          status.textContent = 'URLを保存しました。明日URLが変わったら、ここを貼り替えて保存してね。';
+        } catch (e) { status.textContent = 'URLの形式を確認してね（https:// または http:// から始まるURL）。'; }
+      });
+      document.getElementById('open-haneda-radar-url').addEventListener('click', () => {
+        const value = input.value.trim();
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('invalid protocol');
+          localStorage.setItem(key, parsed.href);
+          window.open(parsed.href, '_blank', 'noopener,noreferrer');
+          status.textContent = 'サイトを別タブで開きます。';
+        } catch (e) { status.textContent = '先に有効なURLを貼り付けてね（https:// または http://）。'; }
+      });
+    })();
+
+    refreshAll();
+    // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
+    setInterval(refreshAll, 60000);
+  </script>
+
+</body>
+</html>

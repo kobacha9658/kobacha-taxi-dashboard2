@@ -218,8 +218,9 @@
     <nav class="quick-links" aria-label="外部アプリ">
       <a class="link-button" href="discord://" onclick="setTimeout(()=>{if(!document.hidden)location.href='https://discord.com/app'},700)" rel="noopener">💬 Discordを開く</a>
       <a class="link-button" id="jr-app-open" href="https://jreast-app.onelink.me/AUmo?c=jreappstart&pid=jreast-app&af_ios_url=https%3A%2F%2Fitunes.apple.com%2Fjp%2Fapp%2Fapple-store%2Fid820004378%3Fpt%3D641888%26ct%3Dekinet%26mt%3D8" rel="noopener">🚃 JR東日本アプリ【公式】を開く</a>
-      <a class="link-button" id="google-translate-open" href="https://apps.apple.com/jp/app/google-%E7%BF%BB%E8%A8%B3/id414706506" target="_blank" rel="noopener noreferrer">🌐 Google翻訳アプリを開く</a>
-      <a class="link-button" id="hills-app-open" href="https://apps.apple.com/jp/app/%E3%83%92%E3%83%AB%E3%82%BA%E3%82%A2%E3%83%97%E3%83%AA/id1537350778" target="_blank" rel="noopener noreferrer">🏙️ ヒルズアプリを開く</a>
+      <a class="link-button" id="google-translate-open" href="googletranslate://" target="_blank" rel="noopener noreferrer">🌐 Google翻訳アプリを起動</a>
+      <a class="link-button" href="https://translate.google.com/" target="_blank" rel="noopener noreferrer">Google翻訳をブラウザで開く ↗</a>
+      <a class="link-button" id="hills-app-open" href="https://www.hillscard.com/support/qa/app" target="_blank" rel="noopener noreferrer">🏙️ ヒルズアプリの案内</a>
     </nav>
     <section class="section" aria-labelledby="stations-heading">
       <div class="section-head"><div><h2 id="stations-heading">🚉 現在地から3km以内の駅</h2><p class="section-note">GPS取得後に検索。地下鉄を含み、路面電車・ライトレールは除外します。</p></div><button id="station-refresh" type="button">駅を検索</button></div>
@@ -322,42 +323,43 @@
       </div>
     </section>
 
+
+    <section class="section" aria-labelledby="toilet-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="toilet-heading">🚻 さくっとトイレ</h2>
+          <p class="section-note">近くのトイレを探せる「さくっとトイレ」を表示します。枠内に表示されない場合は別画面で開いてください。</p>
+        </div>
+        <a class="link-button" href="https://sakutto-toilet.netlify.app/" target="_blank" rel="noopener noreferrer">さくっとトイレを別画面で開く ↗</a>
+      </div>
+      <div class="traffic-feature">
+        <iframe id="sakutto-toilet-frame" title="さくっとトイレ"
+          src="https://sakutto-toilet.netlify.app/" loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          style="display:block;width:100%;height:620px;border:1px solid var(--border,#d5dce3);border-radius:10px;margin-top:12px;background:#fff"></iframe>
+        <p class="muted">※埋め込み表示は提供元サイトの設定に左右されます。空白・エラーになる場合は「さくっとトイレを別画面で開く」を使用してください。</p>
+      </div>
+    </section>
+
     <section class="section" aria-labelledby="traffic-heading">
       <div class="section-head">
         <div>
-          <h2 id="traffic-heading">🚧 高速道路・渋滞情報</h2>
-          <p class="section-note">高速道路の公式交通マップを開いて、渋滞・事故・通行止めを確認</p>
+          <h2 id="traffic-heading">🚧 高速道路・一般道の渋滞情報</h2>
+          <p class="section-note">首都高のリアルタイム交通情報（mew-ti）を表示します。</p>
         </div>
       </div>
       <div class="traffic-feature">
         <div class="traffic-feature-head">
           <div>
-            <strong>🗺️ NAVITIME 高速道路渋滞マップ</strong>
-            <p class="muted">関東の高速道路の渋滞・規制情報を確認できます。枠内で表示できない場合は、公式ページを直接開いてください。</p>
+            <strong id="traffic-map-title">🛣️ 首都高リアルタイム交通マップ（mew-ti）</strong>
+            <p class="muted" id="traffic-map-description">首都高の渋滞・混雑・事故・通行止めなどを地図上で確認できます。</p>
           </div>
-          <a class="link-button" href="https://trafficmap.navitime.co.jp/highway/kanto" target="_blank" rel="noopener noreferrer">NAVITIMEで直接開く ↗</a>
-        </div>
-        <iframe title="NAVITIME 関東高速道路渋滞マップ" src="https://trafficmap.navitime.co.jp/highway/kanto" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:420px;border:1px solid var(--border,#d5dce3);border-radius:10px;margin-top:12px;background:#fff"></iframe>
-        <p class="muted">※NAVITIME側の埋め込み制限により枠内が表示されない場合があります。その際は「NAVITIMEで直接開く」を使用してください。</p>
-      </div>
-
-      <div class="traffic-feature">
-        <div class="traffic-feature-head">
-          <div>
-            <strong>🗺️ 首都高・リアルタイム交通マップ（mew-ti）</strong>
-            <p class="muted">参考画像の右側に近い、首都高公式の道路交通マップです。渋滞・混雑・事故等・通行止めを地図上で確認できます。</p>
+          <div class="quick-links">
+            <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">mew-tiを別画面で開く ↗</a>
           </div>
-          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">首都高マップを開く ↗</a>
         </div>
-        <div class="map-preview-card">
-          <div class="map-preview-icon" aria-hidden="true">🛣️</div>
-          <div class="map-preview-copy">
-            <strong>首都高の道路交通状況マップ</strong>
-            <span>実際の路線図・JCT・出入口・渋滞や規制の表示は公式マップで確認できます。</span>
-          </div>
-          <a class="link-button" href="https://search.shutoko-eng.jp/rtmap.html" target="_blank" rel="noopener noreferrer">地図を見る</a>
-        </div>
-        <p class="muted">※公式サイトはフレーム内表示を認めていないため、ダッシュボード内への直接埋め込みではなく、公式マップを別画面で開く方式にしています。</p>
+        <iframe id="traffic-map-frame" title="首都高リアルタイム交通マップ（mew-ti）" src="https://search.shutoko-eng.jp/rtmap.html" loading="eager" referrerpolicy="strict-origin-when-cross-origin" style="display:block;width:100%;height:520px;border:1px solid var(--border,#d5dce3);border-radius:10px;margin-top:12px;background:#fff"></iframe>
+        <p class="muted">※埋め込み表示は公式サイト側の制限により表示されない場合があります。その場合は「mew-tiを別画面で開く」を使用してください。</p>
       </div>
       <div class="legend-panel">
         <strong>🚗 交通状況の色の目安</strong>
@@ -370,7 +372,7 @@
           <div><i class="legend-dot gray"></i><b>グレー：通行止め・規制</b><span>迂回や通行可否を確認</span></div>
         </div>
       </div>
-      <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図へのリンクから最新情報を確認してください。</p>
+      <p class="traffic-note">※このダッシュボードは公式交通データを独自取得・再描画していません。公式地図の表示を利用します。</p>
     </section>
 
     <section class="section" aria-labelledby="event-input-heading">
@@ -962,5 +964,6 @@
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
     setInterval(refreshAll, 60000);
   </script>
+
 </body>
 </html>

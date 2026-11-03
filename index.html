@@ -874,24 +874,34 @@
         eventImageStatus.textContent = '先に画像を読み取ってください。';
         return;
       }
-      const lines = raw.split(/\r?\n/).map(s => s.replace(/[|｜]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+      // OCRが「終演 予想」「終 濱 予想」のように分割しても検出できるよう空白を許容。
+      const lines = raw.split(/\r?\n/).map(s => s.replace(/[|｜]/g, ' ').replace(/[\t　]+/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
       const converted = [];
       let block = [];
       const flushBlock = markerLine => {
         if (!block.length) return;
         const all = block.join(' ');
         const marker = markerLine || '';
-        const timeMatches = [...(all + ' ' + marker).matchAll(/(\d{1,2})\s*[:：]\s*(\d{2})/g)];
-        const markerTime = marker.match(/(\d{1,2})\s*[:：]\s*(\d{2})/) || (all.match(/終演予想\s*(\d{1,2})\s*[:：]\s*(\d{2})/) || []);
-        const endTime = markerTime.length >= 3 ? `${String(Number(markerTime[1])).padStart(2,'0')}:${markerTime[2]}` : null;
+        // 最優先は「終演予想」の同じ行にある時刻。開始時刻や会場前の時刻は参照しない。
+        const markerNormalized = marker.replace(/\s+/g, ' ');
+        const markerMatch = markerNormalized.match(/終\s*演\s*予\s*想\s*[:：]?\s*(\d{1,2})\s*[:：]\s*(\d{2})/)
+          || markerNormalized.match(/終\s*了\s*予\s*想\s*[:：]?\s*(\d{1,2})\s*[:：]\s*(\d{2})/);
+        const endTime = markerMatch
+          ? `${String(Number(markerMatch[1])).padStart(2,'0')}:${markerMatch[2]}`
+          : null;
         if (!endTime) { block = []; return; }
-        const cleaned = block.join(' ').replace(/【.*?列目】/g, '').replace(/終演予想/g, '').replace(/\d{1,2}\s*[:：]\s*\d{2}/g, ' ').replace(/\s+/g, ' ').trim();
-        const capacityMatch = cleaned.match(/[（(]\s*[\d,，]+\s*(?:席|人)\s*[）)]/);
+        const cleaned = block.join(' ').replace(/【.*?列目】/g, '').replace(/終\s*演\s*予\s*想/g, '').replace(/\d{1,2}\s*[:：]\s*\d{2}/g, ' ').replace(/\s+/g, ' ').trim();
+        const capacityMatch = cleaned.match(/[（(]\s*[\d,，.]+\s*(?:席|人)\s*[）)]/);
         const capacity = capacityMatch ? capacityMatch[0].replace(/，/g, ',') : '';
         let venue = '';
         if (capacityMatch) {
           const before = cleaned.slice(0, capacityMatch.index).trim();
+          // 会場名は人数・席数表記の直前にある文字列を優先。
           venue = before.split(/[。、「」『』]/).filter(Boolean).pop() || before;
+        } else {
+          // 席数がOCRで欠落した場合も、先頭の時刻の直後を会場候補として残す。
+          const first = block.join(' ').match(/\d{1,2}\s*[:：]\s*\d{2}\s+(.+?)(?=\s*[『「]|$)/);
+          venue = first ? first[1].trim() : '';
         }
         const content = cleaned
           .replace(capacityMatch ? capacityMatch[0] : '', '')
@@ -904,22 +914,21 @@
         block = [];
       };
       for (const line of lines) {
-        if (/終演予想/.test(line)) {
+        if (/終\s*演\s*予\s*想|終\s*了\s*予\s*想/.test(line)) {
           flushBlock(line);
         } else {
           block.push(line);
-          if (block.length > 14) block.shift();
+          if (block.length > 18) block.shift();
         }
       }
       if (!converted.length) {
-        // OCRの読み順が崩れていても、読み取りテキスト自体は編集できるようにする。
-        eventImageStatus.textContent = '終演予想時刻を自動判定できませんでした。OCR結果を確認し、終演予想の時刻を先頭にしてイベント欄へ貼り付けてください。';
+        eventImageStatus.textContent = '「終演予想」の行から時刻を特定できませんでした。OCR結果の該当行を確認してください。開始時刻を終演時刻として誤登録しないよう、自動補完は行いません。';
         return;
       }
       eventSource.value = [eventSource.value.trim(), ...converted].filter(Boolean).join('\n');
       eventStatus.textContent = `${converted.length}件をイベント入力欄へ追加しました。内容を確認して「保存して表示」を押してください。`;
       eventSource.scrollIntoView({behavior:'smooth', block:'center'});
-      eventImageStatus.textContent = `${converted.length}件を変換しました。会場名・人数・内容の誤認識がないか確認して保存してください。`;
+      eventImageStatus.textContent = `${converted.length}件を変換しました。終演時刻は「終演予想」行の時刻を使用しています。会場名・人数・内容を確認して保存してください。`;
     });
 
     eventImageRegister.addEventListener('click', async () => {

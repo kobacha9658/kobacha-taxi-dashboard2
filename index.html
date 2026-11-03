@@ -209,7 +209,7 @@
           <p class="gps-address" id="gps-address">位置情報の許可が必要です</p>
           <p class="gps-status" id="gps-status" aria-live="polite">許可すると移動に合わせて住所を更新します</p>
         </div>
-        <button class="gps-button" id="gps-start" type="button">位置情報を許可</button>
+        <button class="gps-button" id="gps-start" type="button">GPS監視を開始</button>
       </section>
     </div>
   </header>
@@ -223,7 +223,7 @@
     </nav>
     <section class="section" aria-labelledby="stations-heading">
       <div class="section-head"><div><h2 id="stations-heading">🚉 現在地から3km以内の駅</h2><p class="section-note">GPS取得後に検索。地下鉄を含み、路面電車・ライトレールは除外します。</p></div><button id="station-refresh" type="button">駅を検索</button></div>
-      <div class="station-meta" id="station-status">位置情報を許可すると、周辺の駅を検索できます。</div>
+      <div class="station-meta" id="station-status">GPS取得後に自動検索・定期更新します。</div>
       <div class="event-display" aria-live="polite">
         <h3 style="margin:0;font-size:1rem">📍 登録済みイベント</h3>
         <p class="muted" style="margin:5px 0 0">登録したイベント一覧画像は常時表示されます。時刻付きテキストイベントの強調表示も引き続き利用できます。</p>
@@ -869,14 +869,27 @@
       return line;
     }
 
-    // 周辺駅：Overpass APIを使用し、路面電車・ライトレールを除外。駅名が同じで近接する重複候補は統合。
+    // 周辺駅：駅番号はOpenStreetMapの駅タグに登録されているものだけ表示（番号の推測・捏造はしない）。
+    // 同じ駅名でも300m以上離れた駅は別枠として扱う。
+    function stationCodeFromTags(tags) {
+      const values = [tags.ref, tags['ref:station'], tags['station:ref'], tags['subway:ref'], tags['railway:ref']];
+      const codes = [];
+      for (const value of values) {
+        if (!value) continue;
+        for (const token of String(value).split(/[;,／\s]+/)) {
+          const code = token.trim().toUpperCase();
+          if (/^[A-Z]{1,3}\d{1,3}$/.test(code) && !codes.includes(code)) codes.push(code);
+        }
+      }
+      return codes;
+    }
     let lastGpsPoint = null;
     const originalUpdateAddress = updateAddress;
     updateAddress = async function(lat, lon, accuracy) { lastGpsPoint={lat,lon}; await originalUpdateAddress(lat,lon,accuracy); };
     async function findNearbyStations(){
       const status=document.getElementById('station-status'), list=document.getElementById('station-list');
-      if(!lastGpsPoint){status.textContent='先に「位置情報を許可」を押してください。';return;}
-      status.textContent='3km以内の駅を検索中…'; list.replaceChildren();
+      if(!lastGpsPoint){status.textContent='GPSの許可が必要です。ブラウザの設定で位置情報を許可してください。';return;}
+      status.textContent='3km以内の駅を更新中…';
       const {lat,lon}=lastGpsPoint;
       const query=`[out:json][timeout:20];(node(around:3000,${lat},${lon})[railway=station];way(around:3000,${lat},${lon})[railway=station];relation(around:3000,${lat},${lon})[railway=station];node(around:3000,${lat},${lon})[station=subway];);out center tags;`;
       try{
@@ -898,17 +911,38 @@
           else if(/東京地下鉄|東京メトロ/i.test(operator)) line='東京メトロ（路線名データなし）';
           else if(/都営地下鉄|東京都交通局/i.test(operator)) line='都営地下鉄（路線名データなし）';
           else if(operator) line=operator;
-          candidates.push({name,dist,subway,line,lat:lat2,lon:lon2}); }
+          candidates.push({name,dist,subway,line,codes:stationCodeFromTags(t),lat:lat2,lon:lon2}); }
         candidates.sort((a,b)=>a.dist-b.dist);
-        // 同じ駅名の上下線・複数ホームは1つにまとめ、路線情報を統合して表示。
-        const unique=[]; for(const st of candidates){const existing=unique.find(x=>x.name===st.name);if(existing){existing.dist=Math.min(existing.dist,st.dist);if(st.line&&!existing.lines.includes(st.line))existing.lines.push(st.line);if(st.subway)existing.subway=true;}else unique.push({...st,lines:st.line?[st.line]:[]});}
+        // 同名駅は近接（300m以内）の場合だけ統合。離れた同名駅（例：浅草）は別枠。
+        // 統合時は路線・駅番号をすべて集約する。
+        const unique=[];
+        for(const st of candidates){
+          const existing=unique.find(x=>x.name===st.name && distanceMeters({lat:x.lat,lon:x.lon},{lat:st.lat,lon:st.lon})<=300);
+          if(existing){
+            existing.dist=Math.min(existing.dist,st.dist);
+            if(st.line&&!existing.lines.includes(st.line))existing.lines.push(st.line);
+            for(const code of st.codes||[])if(!existing.codes.includes(code))existing.codes.push(code);
+            if(st.subway)existing.subway=true;
+          } else unique.push({...st,lines:st.line?[st.line]:[],codes:[...(st.codes||[])]});
+        }
         unique.sort((a,b)=>a.dist-b.dist);
         if(!unique.length){status.textContent='3km以内の駅が見つかりませんでした。';return;}
-        for(const st of unique.slice(0,10)){const item=document.createElement('div');item.className='station-item';const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;const meta=document.createElement('small');meta.textContent=`約${st.dist}m${st.lines.length?' · '+st.lines.join('・'):''}`;item.append(title,meta);list.appendChild(item);}
-        status.textContent=`近い順に最大10駅を表示（3km以内の候補：${unique.length}駅・同じ駅名の上下線／複数ホームは統合） · 路面電車・ライトレール除外`;
+        for(const st of unique.slice(0,10)){
+          const item=document.createElement('div');item.className='station-item';
+          const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;
+          const details=[];
+          if(st.codes.length) details.push(st.codes.join('・'));
+          if(st.lines.length) details.push(st.lines.join('・'));
+          if(!st.codes.length) details.push('駅番号データなし');
+          const meta=document.createElement('small');meta.textContent=`約${st.dist}m · ${details.join(' ／ ')}`;
+          item.append(title,meta);list.appendChild(item);
+        }
+        status.textContent=`近い順に最大10駅を表示（3km以内：${unique.length}駅・同名駅は300m以内のみ統合、駅番号は取得できたものを全表示） · 路面電車・ライトレール除外`;
       }catch(e){status.textContent='駅情報を取得できませんでした。通信状況を確認して再検索してください。';}
     }
     document.getElementById('station-refresh').addEventListener('click',findNearbyStations);
+    // GPS移動時の更新に加え、2分ごとに駅情報を再取得して常時更新する。
+    setInterval(() => { if(lastGpsPoint) findNearbyStations(); }, 120000);
 
     // TPシステムは外部サイトのため、ブラウザのCORS制限で内容を直接取得できない場合があります。
     // 自動取得できた場合のみ「遅れ便情報」等を表示し、取得不可時は誤判定せず公式リンクを案内します。
@@ -954,6 +988,8 @@
     })();
 
     refreshAll();
+    // ページ表示時にGPS監視を自動開始。位置情報の許可はiPhone／ブラウザ側で必要です。
+    startGps();
     // 60秒ごとに画像を再読み込みします。必要に応じてボタンでも更新できます。
     setInterval(refreshAll, 60000);
   </script>

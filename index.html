@@ -516,6 +516,8 @@
       // watchPositionでGPS座標を常時監視します（30秒ごとのポーリングに限定しません）。
     }
     gpsStart.addEventListener('click', startGps);
+    // ページ表示時にGPS監視を自動開始（位置情報の許可は端末側で必要）。
+    startGps();
 
     // JR東日本アプリへの公式誘導リンク（iPhoneでアプリが起動することをユーザー確認済み）。
     // 通常のリンク遷移を利用し、アプリ／App Storeへの振り分けはリンク側に任せます。
@@ -886,15 +888,18 @@
     let lastGpsPoint = null;
     const originalUpdateAddress = updateAddress;
     updateAddress = async function(lat, lon, accuracy) { lastGpsPoint={lat,lon}; await originalUpdateAddress(lat,lon,accuracy); };
+    let stationSearchSequence = 0;
     async function findNearbyStations(){
       const status=document.getElementById('station-status'), list=document.getElementById('station-list');
+      const searchSequence = ++stationSearchSequence;
+      list.replaceChildren(); // 更新前に前回分を消し、再検索のたびに件数が増える不具合を防止
       if(!lastGpsPoint){status.textContent='GPSの許可が必要です。ブラウザの設定で位置情報を許可してください。';return;}
       status.textContent='3km以内の駅を更新中…';
       const {lat,lon}=lastGpsPoint;
       const query=`[out:json][timeout:20];(node(around:3000,${lat},${lon})[railway=station];way(around:3000,${lat},${lon})[railway=station];relation(around:3000,${lat},${lon})[railway=station];node(around:3000,${lat},${lon})[station=subway];);out center tags;`;
       try{
         const res=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query)); if(!res.ok)throw Error('検索サービス応答エラー');
-        const data=await res.json(); const candidates=[];
+        const data=await res.json(); if(searchSequence!==stationSearchSequence)return; const candidates=[];
         for(const e of data.elements||[]){const t=e.tags||{}; if(t.railway==='tram_stop'||t.railway==='light_rail'||t.railway==='halt'||t.railway==='platform'||t.usage==='tourism')continue;
           const name=t['name:ja']||t.name; if(!name)continue;
           const lat2=e.lat??e.center?.lat, lon2=e.lon??e.center?.lon;if(lat2==null||lon2==null)continue;
@@ -917,7 +922,7 @@
         // 統合時は路線・駅番号をすべて集約する。
         const unique=[];
         for(const st of candidates){
-          const existing=unique.find(x=>x.name===st.name && distanceMeters({lat:x.lat,lon:x.lon},{lat:st.lat,lon:st.lon})<=300);
+          const existing=unique.find(x=>x.name===st.name && distanceMeters({lat:x.lat,lon:x.lon},{lat:st.lat,lon:st.lon})<=650);
           if(existing){
             existing.dist=Math.min(existing.dist,st.dist);
             if(st.line&&!existing.lines.includes(st.line))existing.lines.push(st.line);
@@ -927,7 +932,9 @@
         }
         unique.sort((a,b)=>a.dist-b.dist);
         if(!unique.length){status.textContent='3km以内の駅が見つかりませんでした。';return;}
-        for(const st of unique.slice(0,10)){
+        const visibleStations=unique.slice(0,10);
+        list.replaceChildren(); // 描画直前にも全カードを消去
+        for(const st of visibleStations){
           const item=document.createElement('div');item.className='station-item';
           const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;
           const details=[];
@@ -937,8 +944,8 @@
           const meta=document.createElement('small');meta.textContent=`約${st.dist}m · ${details.join(' ／ ')}`;
           item.append(title,meta);list.appendChild(item);
         }
-        status.textContent=`近い順に最大10駅を表示（3km以内：${unique.length}駅・同名駅は300m以内のみ統合、駅番号は取得できたものを全表示） · 路面電車・ライトレール除外`;
-      }catch(e){status.textContent='駅情報を取得できませんでした。通信状況を確認して再検索してください。';}
+        status.textContent=`近い順に最大10駅を表示（3km以内：${unique.length}駅・同名駅は650m以内のみ統合、駅番号は取得できたものを全表示） · 路面電車・ライトレール除外`;
+      }catch(e){if(searchSequence===stationSearchSequence){list.replaceChildren();status.textContent='駅情報を取得できませんでした。通信状況を確認して再検索してください。';}}
     }
     document.getElementById('station-refresh').addEventListener('click',findNearbyStations);
     // GPS移動時の更新に加え、2分ごとに駅情報を再取得して常時更新する。

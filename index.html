@@ -387,7 +387,7 @@
 
       <div class="event-input-area image-ocr-area" id="event-image-board">
         <strong>🖼️ イベント情報画像（そのまま表示）</strong>
-        <p class="muted">イベント一覧のスクリーンショットを貼り付けるか、写真から選択してください。文字の自動読み取りは行わず、元画像を「登録済みイベント」欄に常時表示します。画像はこのブラウザに保存され、次回も表示されます。</p>
+        <p class="muted">イベント一覧のスクリーンショットを貼り付けるか、写真から選択してください。画像から文字をOCRで読み取り、終演予想時刻・会場・人数・内容をイベント入力欄へ変換できます。元画像も登録して残せます。</p>
         <div id="event-image-drop" class="event-image-drop" tabindex="0" role="button" aria-label="イベント画像を貼り付ける領域">
           <span>📋 コピーしたスクリーンショットをここにペースト</span>
           <small>または下のボタンから写真・スクリーンショットを選択</small>
@@ -400,13 +400,17 @@
         <p class="muted">画像を貼り付け・選択したあと、「画像を登録」を押してください。終演予想時刻の入力は不要です。</p>
         <img id="event-image-preview" alt="登録前のイベント情報画像プレビュー" hidden />
         <div class="event-actions">
+          <button id="event-image-ocr" type="button">🔎 画像からイベント情報を読み取る</button>
           <button id="event-image-register" type="button">画像を登録</button>
           <button id="event-image-clear" type="button" class="secondary">登録画像をすべて消去</button>
         </div>
+        <label for="event-image-ocr-text"><strong>OCR読み取り結果（確認・修正できます）</strong></label>
+        <textarea id="event-image-ocr-text" style="display:block;width:100%;min-height:130px;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:.88rem" placeholder="画像を読み取ると、ここに文字が表示されます。"></textarea>
+        <div class="event-actions"><button id="event-image-to-events" type="button" class="secondary">読み取り結果をイベント形式に変換</button></div>
         <p id="event-image-status" class="event-status" aria-live="polite">画像を貼り付けるか選択してください。</p>
       </div>
 
-      <p class="muted">※各行の先頭の時刻をイベント終了予定時刻として扱い、その前後30分以内は駅一覧の上にも強調表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了予定時刻が入力されていない場合、実際の終演時刻とは一致しません。</p>
+      <p class="muted">※OCRの読み取り結果は誤認識する場合があります。会場名・人数・内容を確認して保存してください。各行の先頭の時刻をイベント終了予定時刻として扱い、その前後30分以内は駅一覧の上にも強調表示します。開催日の見出しがある場合は、その日付のイベントのみ表示します。終了予定時刻が入力されていない場合、実際の終演時刻とは一致しません。</p>
     </section>
 
     <p class="disclaimer">※映像は各配信元の画像を読み込んで表示しています。配信元の障害・アクセス制限・通信状況などにより表示されない場合があります。更新間隔はこのページ側の設定で、配信元の更新頻度を保証するものではありません。</p>
@@ -516,8 +520,6 @@
       // watchPositionでGPS座標を常時監視します（30秒ごとのポーリングに限定しません）。
     }
     gpsStart.addEventListener('click', startGps);
-    // ページ表示時にGPS監視を自動開始（位置情報の許可は端末側で必要）。
-    startGps();
 
     // JR東日本アプリへの公式誘導リンク（iPhoneでアプリが起動することをユーザー確認済み）。
     // 通常のリンク遷移を利用し、アプリ／App Storeへの振り分けはリンク側に任せます。
@@ -796,6 +798,130 @@
       const items = Array.from(e.clipboardData?.items || []); const item = items.find(x => x.type && x.type.startsWith('image/'));
       if (item) setEventImage(item.getAsFile());
     });
+
+    // 画像内の文字をブラウザ内OCRで読み取り、編集可能なテキストへ変換します。
+    const eventImageOcrButton = document.getElementById('event-image-ocr');
+    const eventImageOcrText = document.getElementById('event-image-ocr-text');
+    const eventImageToEvents = document.getElementById('event-image-to-events');
+    let tesseractLoader = null;
+    async function loadTesseract() {
+      if (window.Tesseract) return window.Tesseract;
+      if (!tesseractLoader) {
+        tesseractLoader = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+          script.onload = () => resolve(window.Tesseract);
+          script.onerror = () => reject(new Error('OCRエンジンを読み込めませんでした。通信環境を確認してください。'));
+          document.head.appendChild(script);
+        });
+      }
+      return tesseractLoader;
+    }
+    async function imageBlobToColumns(blob) {
+      const image = await createImageBitmap(blob);
+      const columns = [];
+      // 画像を3列に分けて読み取ることで、複数列のイベント表が混ざりにくくします。
+      for (let i = 0; i < 3; i++) {
+        const sx = Math.round(image.width * i / 3);
+        const ex = Math.round(image.width * (i + 1) / 3);
+        const canvas = document.createElement('canvas');
+        const scale = Math.max(1.5, Math.min(2.5, 1800 / Math.max(ex - sx, image.height)));
+        canvas.width = Math.round((ex - sx) * scale);
+        canvas.height = Math.round(image.height * scale);
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, sx, 0, ex - sx, image.height, 0, 0, canvas.width, canvas.height);
+        columns.push(canvas);
+      }
+      image.close();
+      return columns;
+    }
+    eventImageOcrButton.addEventListener('click', async () => {
+      if (!pendingEventImage) {
+        eventImageStatus.textContent = '先に画像を貼り付けるか選択してください。';
+        return;
+      }
+      eventImageOcrButton.disabled = true;
+      eventImageStatus.textContent = 'OCRエンジンを準備しています。初回は日本語データの読み込みに時間がかかります…';
+      let worker;
+      try {
+        const Tesseract = await loadTesseract();
+        worker = await Tesseract.createWorker('jpn+eng', 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') eventImageStatus.textContent = `画像を読み取り中… ${Math.round((m.progress || 0) * 100)}%`;
+          },
+          langPath: 'https://tessdata.projectnaptha.com/4.0.0'
+        });
+        const columns = await imageBlobToColumns(pendingEventImage);
+        const results = [];
+        for (let i = 0; i < columns.length; i++) {
+          eventImageStatus.textContent = `イベント表の${i + 1}/3列目を読み取り中…`;
+          const result = await worker.recognize(columns[i]);
+          results.push(`【${i + 1}列目】\n${result.data.text || ''}`);
+        }
+        eventImageOcrText.value = results.join('\n\n');
+        eventImageStatus.textContent = '読み取り完了！誤字や会場名を確認・修正してから「読み取り結果をイベント形式に変換」を押してください。';
+      } catch (err) {
+        eventImageStatus.textContent = '文字を読み取れませんでした。' + (err && err.message ? ' ' + err.message : '');
+      } finally {
+        if (worker) { try { await worker.terminate(); } catch (e) {} }
+        eventImageOcrButton.disabled = false;
+      }
+    });
+    eventImageToEvents.addEventListener('click', () => {
+      const raw = eventImageOcrText.value.trim();
+      if (!raw) {
+        eventImageStatus.textContent = '先に画像を読み取ってください。';
+        return;
+      }
+      const lines = raw.split(/\r?\n/).map(s => s.replace(/[|｜]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+      const converted = [];
+      let block = [];
+      const flushBlock = markerLine => {
+        if (!block.length) return;
+        const all = block.join(' ');
+        const marker = markerLine || '';
+        const timeMatches = [...(all + ' ' + marker).matchAll(/(\d{1,2})\s*[:：]\s*(\d{2})/g)];
+        const markerTime = marker.match(/(\d{1,2})\s*[:：]\s*(\d{2})/) || (all.match(/終演予想\s*(\d{1,2})\s*[:：]\s*(\d{2})/) || []);
+        const endTime = markerTime.length >= 3 ? `${String(Number(markerTime[1])).padStart(2,'0')}:${markerTime[2]}` : null;
+        if (!endTime) { block = []; return; }
+        const cleaned = block.join(' ').replace(/【.*?列目】/g, '').replace(/終演予想/g, '').replace(/\d{1,2}\s*[:：]\s*\d{2}/g, ' ').replace(/\s+/g, ' ').trim();
+        const capacityMatch = cleaned.match(/[（(]\s*[\d,，]+\s*(?:席|人)\s*[）)]/);
+        const capacity = capacityMatch ? capacityMatch[0].replace(/，/g, ',') : '';
+        let venue = '';
+        if (capacityMatch) {
+          const before = cleaned.slice(0, capacityMatch.index).trim();
+          venue = before.split(/[。、「」『』]/).filter(Boolean).pop() || before;
+        }
+        const content = cleaned
+          .replace(capacityMatch ? capacityMatch[0] : '', '')
+          .replace(venue, '')
+          .replace(/^[\s・\-—]+|[\s・\-—]+$/g, '')
+          .trim();
+        if (venue || content) {
+          converted.push(`${endTime}（終演予想） ${venue || '会場名要確認'}【イベント会場】${capacity ? ` ${capacity}` : ''}${content ? `【${content}】` : '【イベント内容要確認】'}`);
+        }
+        block = [];
+      };
+      for (const line of lines) {
+        if (/終演予想/.test(line)) {
+          flushBlock(line);
+        } else {
+          block.push(line);
+          if (block.length > 14) block.shift();
+        }
+      }
+      if (!converted.length) {
+        // OCRの読み順が崩れていても、読み取りテキスト自体は編集できるようにする。
+        eventImageStatus.textContent = '終演予想時刻を自動判定できませんでした。OCR結果を確認し、終演予想の時刻を先頭にしてイベント欄へ貼り付けてください。';
+        return;
+      }
+      eventSource.value = [eventSource.value.trim(), ...converted].filter(Boolean).join('\n');
+      eventStatus.textContent = `${converted.length}件をイベント入力欄へ追加しました。内容を確認して「保存して表示」を押してください。`;
+      eventSource.scrollIntoView({behavior:'smooth', block:'center'});
+      eventImageStatus.textContent = `${converted.length}件を変換しました。会場名・人数・内容の誤認識がないか確認して保存してください。`;
+    });
+
     eventImageRegister.addEventListener('click', async () => {
       if (!pendingEventImage) { eventImageStatus.textContent = '先に画像を貼り付けるか選択してください。'; return; }
       try {
@@ -922,7 +1048,7 @@
         // 統合時は路線・駅番号をすべて集約する。
         const unique=[];
         for(const st of candidates){
-          const existing=unique.find(x=>x.name===st.name && distanceMeters({lat:x.lat,lon:x.lon},{lat:st.lat,lon:st.lon})<=650);
+          const existing=unique.find(x=>x.name===st.name && distanceMeters({lat:x.lat,lon:x.lon},{lat:st.lat,lon:st.lon})<=500);
           if(existing){
             existing.dist=Math.min(existing.dist,st.dist);
             if(st.line&&!existing.lines.includes(st.line))existing.lines.push(st.line);
@@ -933,7 +1059,6 @@
         unique.sort((a,b)=>a.dist-b.dist);
         if(!unique.length){status.textContent='3km以内の駅が見つかりませんでした。';return;}
         const visibleStations=unique.slice(0,10);
-        list.replaceChildren(); // 描画直前にも全カードを消去
         for(const st of visibleStations){
           const item=document.createElement('div');item.className='station-item';
           const title=document.createElement('strong');title.textContent=(st.subway?'🚇 ':'🚉 ')+st.name;
@@ -944,7 +1069,7 @@
           const meta=document.createElement('small');meta.textContent=`約${st.dist}m · ${details.join(' ／ ')}`;
           item.append(title,meta);list.appendChild(item);
         }
-        status.textContent=`近い順に最大10駅を表示（3km以内：${unique.length}駅・同名駅は650m以内のみ統合、駅番号は取得できたものを全表示） · 路面電車・ライトレール除外`;
+        status.textContent=`近い順に最大10駅を表示（3km以内：${unique.length}駅・同名駅は500m以内のみ統合、駅番号は取得できたものを全表示） · 路面電車・ライトレール除外`;
       }catch(e){if(searchSequence===stationSearchSequence){list.replaceChildren();status.textContent='駅情報を取得できませんでした。通信状況を確認して再検索してください。';}}
     }
     document.getElementById('station-refresh').addEventListener('click',findNearbyStations);
